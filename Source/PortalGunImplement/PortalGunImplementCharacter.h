@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
+#include "Portal/CustomPortal.h"
 #include "Logging/LogMacros.h"
 #include "PortalGunImplementCharacter.generated.h"
 
@@ -89,6 +90,32 @@ public:
 
 	/** Returns first person camera component **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
+	
+public:
+	//포탈을 발사하는 핵심 함수입니다. PortalID가 0이면 파란색, 1이면 주황색 포탈을 쏩니다.
+	UFUNCTION(BlueprintCallable, Category="Portal")
+	void ShootPortal(int32 PortalID);
+	
+	//블루프린트 에디터에서 'BP_CustomPortal'을 선택할 수 있게 해주는 변수입니다.
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Portal")
+	TSubclassOf<ACustomPortal> PortalClass;
+	
+	//파란색 포탈을 쏠 수 있는 권한
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
+	bool bHasBlueGun = false;
+	
+	//주황색 포탈을 쏠 수 있는 권한
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
+	bool bHasOrangeGun = false;
+	
+	//생성된 파란색 포탈의 주소를 기억합니다.
+	UPROPERTY(Transient)
+	TObjectPtr<ACustomPortal> BluePortal;
+	
+	//생성된 주황색 포탈의 주소를 기억합니다.
+	UPROPERTY(Transient)
+	TObjectPtr<ACustomPortal> OrangePortal;
+	
 
 };
 

@@ -66,6 +66,56 @@ void APortalGunImplementCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 	}
 }
 
+void APortalGunImplementCharacter::ShootPortal(int32 PortalID)
+{
+	//권한 체크 : 특정 포탈건 발사 시도인데 권한이 없으면 그냥 return
+	if (PortalID == 0 && !bHasBlueGun) return;   // 파란색 발사 시도인데 권한 없으면 취소
+	if (PortalID == 1 && !bHasOrangeGun) return; // 주황색 발사 시도인데 권한 없으면 취소
+	
+	//카메라의 현재 위치와 회전값(바라보는 방향)을 가져온다.
+	FVector Start;
+	FRotator Rotation;
+	GetActorEyesViewPoint(Start, Rotation);
+	
+	//레이저의 끝점 계산 (충분히 긴 거리만큼 쏘기)
+	FVector End = Start + (Rotation.Vector()*5000.f);
+	
+	FHitResult HitResult;
+	FCollisionQueryParams CollisionParams;
+	CollisionParams.AddIgnoredActor(this);  //레이저가 캐릭터 자기 자신에게 맞는 것을 방지
+	
+	//월드에서 레이저(Line Trace)를 쏩니다
+	if (GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, ECollisionChannel::ECC_Visibility, CollisionParams))
+	{
+		//벽의 경사면을 사용하여 포탈이 벽에 딱 붙을 회전값 계산
+		//벽면에서 수직으로 튀어나오는 방향(X축)을 기준으로 회전 행렬 만들기
+		FRotator PortalRotation = FRotationMatrix::MakeFromX(HitResult.Normal).Rotator();
+		FVector PortalLocation = HitResult.Location;
+		
+		//어떤 포탈(파랑/주황)을 조작할지 결정
+		//-----이중 포인터 헷갈릴 수 있으니 다시보기.-----
+		TObjectPtr<ACustomPortal>* TargetPortal = (PortalID == 0) ? &BluePortal : &OrangePortal;  
+		
+		if (*TargetPortal == nullptr)
+		{
+			//월드에 해당 포탈이 없다면 새로 소환(Spawn)
+			FActorSpawnParameters SpawnParams;
+			SpawnParams.Owner = this;
+			*TargetPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, PortalLocation, PortalRotation, SpawnParams);
+			
+			if (*TargetPortal != nullptr)
+			{
+				(*TargetPortal)->PortalID = PortalID;
+			}
+		}
+		else
+		{
+			//이미 포탈이 있다면 위치와 회전값만 업데이트
+			(*TargetPortal)->SetActorLocationAndRotation(PortalLocation, PortalRotation);
+		}
+	}
+}
+
 
 void APortalGunImplementCharacter::MoveInput(const FInputActionValue& Value)
 {
