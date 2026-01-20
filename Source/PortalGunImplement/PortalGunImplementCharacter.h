@@ -17,6 +17,9 @@ struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
+// 델리게이트 선언 (정수형 매개변수: 0은 파란색, 1은 주황색 포탈)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPortalShotSignature, int32, PortalColorIndex);
+
 /**
  *  A basic first person character
  */
@@ -66,6 +69,11 @@ protected:
 	
 public:
 	APortalGunImplementCharacter();
+	
+public:
+	// 컴포넌트가 구독할 방송 신호 변수
+	UPROPERTY(BlueprintAssignable, Category = "Portal")
+	FOnPortalShotSignature OnPortalShot;
 
 protected:
 
