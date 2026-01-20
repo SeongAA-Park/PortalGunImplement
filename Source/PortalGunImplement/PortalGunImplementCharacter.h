@@ -12,6 +12,7 @@ class UInputComponent;
 class USkeletalMeshComponent;
 class UCameraComponent;
 class UInputAction;
+class UInputMappingContext;
 struct FInputActionValue;
 
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
@@ -44,11 +45,24 @@ protected:
 
 	/** Look Input Action */
 	UPROPERTY(EditAnywhere, Category ="Input")
-	class UInputAction* LookAction;
+	UInputAction* LookAction;  //원래 앞에 class가 붙어있었다. 위에 class UInputAction이 전방선언되어 있음에도 불구하고...
 
 	/** Mouse Look Input Action */
 	UPROPERTY(EditAnywhere, Category ="Input")
-	class UInputAction* MouseLookAction;
+	UInputAction* MouseLookAction;
+	
+	// about Portal Action
+	UPROPERTY(EditAnywhere, Category ="Input|Portal")
+	TObjectPtr<UInputAction> ShootBluePT;
+	
+	UPROPERTY(EditAnywhere, Category ="Input|Portal")
+	TObjectPtr<UInputAction> ShootOrangePT;
+	
+	/**PortalGun 조작에 관한 Input Action*/
+	UPROPERTY(EditAnywhere, Category ="Input")
+	TObjectPtr<class UInputMappingContext> PortalMappingContext;
+	
+	
 	
 public:
 	APortalGunImplementCharacter();
@@ -76,6 +90,10 @@ protected:
 	/** Handles jump end inputs from either controls or UI interfaces */
 	UFUNCTION(BlueprintCallable, Category="Input")
 	virtual void DoJumpEnd();
+	
+	//포탈 관련 action 입력 시 실행될 함수들
+	void InputShootBluePT();
+	void InputShootOrangePT();
 
 protected:
 
@@ -91,6 +109,7 @@ public:
 	/** Returns first person camera component **/
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 	
+//about Portal	
 public:
 	//포탈을 발사하는 핵심 함수입니다. PortalID가 0이면 파란색, 1이면 주황색 포탈을 쏩니다.
 	UFUNCTION(BlueprintCallable, Category="Portal")

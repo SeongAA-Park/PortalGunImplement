@@ -44,6 +44,7 @@ APortalGunImplementCharacter::APortalGunImplementCharacter()
 	GetCharacterMovement()->AirControl = 0.5f;
 }
 
+//액션 바인딩
 void APortalGunImplementCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {	
 	// Set up action bindings
@@ -59,6 +60,17 @@ void APortalGunImplementCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 		// Looking/Aiming
 		EnhancedInputComponent->BindAction(LookAction, ETriggerEvent::Triggered, this, &APortalGunImplementCharacter::LookInput);
 		EnhancedInputComponent->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &APortalGunImplementCharacter::LookInput);
+		
+		//-----포탈 액션에 관한 값 추가-----
+		if (ShootBluePT)
+		{
+			EnhancedInputComponent->BindAction(ShootBluePT, ETriggerEvent::Started, this, &ThisClass::InputShootBluePT);
+		}
+		
+		if (ShootOrangePT)
+		{
+			EnhancedInputComponent->BindAction(ShootOrangePT, ETriggerEvent::Started, this, &ThisClass::InputShootOrangePT);
+		}
 	}
 	else
 	{
@@ -167,4 +179,16 @@ void APortalGunImplementCharacter::DoJumpEnd()
 {
 	// pass StopJumping to the character
 	StopJumping();
+}
+
+void APortalGunImplementCharacter::InputShootBluePT()
+{
+	//여기에 포탈건 발사 사운드, 이펙트, 델리게이트 등이 들어갈 수 있습니다.
+	UE_LOG(LogTemp, Warning, TEXT("Blue Portal Shot!"));
+}
+
+void APortalGunImplementCharacter::InputShootOrangePT()
+{
+	//여기에 포탈건 발사 사운드, 이펙트, 델리게이트 등이 들어갈 수 있습니다.
+	UE_LOG(LogTemp, Warning, TEXT("Orange Portal Shot!"));
 }
