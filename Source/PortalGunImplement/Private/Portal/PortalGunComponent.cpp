@@ -5,6 +5,7 @@
 
 #include "PortalGunImplementCharacter.h"
 #include "Kismet/GameplayStatics.h"
+#include "Kismet/KismetMathLibrary.h"
 
 // Sets default values for this component's properties
 UPortalGunComponent::UPortalGunComponent()
@@ -66,7 +67,33 @@ void UPortalGunComponent::ExecutePortalTrace(int32 ColorIndex)
 		
 		//디버그를 위한 라인 표시
 		DrawDebugLine(GetWorld(),MuzzlePoint, ImpactPoint, FColor::Red, false,1.0f, 0, 1.f );
-		//이후 포탈 이펙트 추가하기
+		
+		//라인트레이스 충돌 지점에 포탈 설치
+		//스폰 위치: 벽에 닿은 지점에서 아주 미세하게 앞(normal 방향)으로 빼주기
+		FVector SpawnLocation = ImpactPoint+ (HitResult.ImpactNormal*0.01f);
+		
+		//스폰될 포탈 회전시키기 : 벽의 Normal을 포탈 Normal과 맞추기?  << 다른 로직도 고려?
+		FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromX(HitResult.ImpactNormal);
+		
+		//기존에 해당 색상의 포탈이 있었다면 제거하기
+		if (ColorIndex == 0 && BluePortal) BluePortal->Destroy();
+		else if (ColorIndex == 1 && OrangePortal) OrangePortal->Destroy();
+		
+		//액터 스폰 설정 (재검토 필요)
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = GetOwner();
+		SpawnParams.Instigator = Cast<APawn>(GetOwner());
+		
+		//실제 포탈 소환
+		ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
+		if (NewPortal)
+		{
+			NewPortal->PortalID = ColorIndex;  //포탈액터 자체는 파랑/주황 모두 포함... ColorIndex는 설정해줘야함
+			
+			//관리용 변수에 저장하기
+			if (ColorIndex == 0) BluePortal = NewPortal;
+			else OrangePortal = NewPortal;
+		}
 	}
 }
 
