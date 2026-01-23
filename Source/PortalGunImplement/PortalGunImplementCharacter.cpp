@@ -62,15 +62,15 @@ void APortalGunImplementCharacter::SetupPlayerInputComponent(UInputComponent* Pl
 		EnhancedInputComponent->BindAction(MouseLookAction, ETriggerEvent::Triggered, this, &APortalGunImplementCharacter::LookInput);
 		
 		//-----포탈 액션에 관한 값 추가-----
-		if (ShootBluePT)
-		{
-			EnhancedInputComponent->BindAction(ShootBluePT, ETriggerEvent::Started, this, &ThisClass::InputShootBluePT);
-		}
-		
-		if (ShootOrangePT)
-		{
-			EnhancedInputComponent->BindAction(ShootOrangePT, ETriggerEvent::Started, this, &ThisClass::InputShootOrangePT);
-		}
+		// if (ShootBluePT)
+		// {
+		// 	EnhancedInputComponent->BindAction(ShootBluePT, ETriggerEvent::Started, this, &ThisClass::InputShootBluePT);
+		// }
+		//
+		// if (ShootOrangePT)
+		// {
+		// 	EnhancedInputComponent->BindAction(ShootOrangePT, ETriggerEvent::Started, this, &ThisClass::InputShootOrangePT);
+		// }
 	}
 	else
 	{
@@ -186,7 +186,7 @@ void APortalGunImplementCharacter::InputShootBluePT()
 	//여기에 포탈건 발사 사운드, 이펙트, 델리게이트 등이 들어갈 수 있습니다.
 	UE_LOG(LogTemp, Warning, TEXT("Blue Portal Shot! BroadCast PortalColorIndexValue 0"));
 	//전달할 값 방송
-	OnPortalShot.Broadcast(0);
+	//OnPortalShot.Broadcast(0);
 }
 
 void APortalGunImplementCharacter::InputShootOrangePT()
@@ -194,7 +194,7 @@ void APortalGunImplementCharacter::InputShootOrangePT()
 	//여기에 포탈건 발사 사운드, 이펙트, 델리게이트 등이 들어갈 수 있습니다.
 	UE_LOG(LogTemp, Warning, TEXT("Orange Portal Shot! BroadCast PortalColorIndexValue 1"));
 	//전달할 값 방송
-	OnPortalShot.Broadcast(1);
+	//OnPortalShot.Broadcast(1);
 }
 
 //그치만 아직 IMC 등록은 진행하지 않았음

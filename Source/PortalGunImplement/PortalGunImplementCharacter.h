@@ -18,7 +18,7 @@ struct FInputActionValue;
 DECLARE_LOG_CATEGORY_EXTERN(LogTemplateCharacter, Log, All);
 
 // 델리게이트 선언 (정수형 매개변수: 0은 파란색, 1은 주황색 포탈)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPortalShotSignature, int32, PortalColorIndex);
+// DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPortalShotSignature, int32, PortalColorIndex);
 
 /**
  *  A basic first person character
@@ -54,16 +54,19 @@ protected:
 	UPROPERTY(EditAnywhere, Category ="Input")
 	UInputAction* MouseLookAction;
 	
+	
+	
+	// ~~~추가함~~~
 	// about Portal Action
-	UPROPERTY(EditAnywhere, Category ="Input|Portal")
-	TObjectPtr<UInputAction> ShootBluePT;
-	
-	UPROPERTY(EditAnywhere, Category ="Input|Portal")
-	TObjectPtr<UInputAction> ShootOrangePT;
-	
-	/**PortalGun 조작에 관한 Input Action*/
-	UPROPERTY(EditAnywhere, Category ="Input")
-	TObjectPtr<class UInputMappingContext> PortalMappingContext;
+	// UPROPERTY(EditAnywhere, Category ="Input|Portal")
+	// TObjectPtr<UInputAction> ShootBluePT;
+	//
+	// UPROPERTY(EditAnywhere, Category ="Input|Portal")
+	// TObjectPtr<UInputAction> ShootOrangePT;
+	//
+	// /**PortalGun 조작에 관한 Input Action*/
+	// UPROPERTY(EditAnywhere, Category ="Input")
+	// TObjectPtr<class UInputMappingContext> PortalMappingContext;
 	
 	
 	
@@ -71,9 +74,9 @@ public:
 	APortalGunImplementCharacter();
 	
 public:
-	// 컴포넌트가 구독할 방송 신호 변수
-	UPROPERTY(BlueprintAssignable, Category = "Portal")
-	FOnPortalShotSignature OnPortalShot;
+	//포탈건 컴포넌트가 구독할 방송 신호 변수
+	// UPROPERTY(BlueprintAssignable, Category = "Portal")
+	// FOnPortalShotSignature OnPortalShot;
 
 protected:
 
@@ -119,16 +122,6 @@ public:
 	
 //about Portal	
 public:
-	//아래 로직들은 PortalGunComponent로 이전되었습니다. 완전히 지우기 전, 임시로 남겨놓습니다.
-	
-	//포탈을 발사하는 핵심 함수입니다. PortalID가 0이면 파란색, 1이면 주황색 포탈을 쏩니다.
-	// UFUNCTION(BlueprintCallable, Category="Portal")
-	// void ShootPortal(int32 PortalID);
-	
-	//블루프린트 에디터에서 'BP_CustomPortal'을 선택할 수 있게 해주는 변수입니다.
-	// UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Portal")
-	// TSubclassOf<ACustomPortal> PortalClass;
-	
 	//파란색 포탈을 쏠 수 있는 권한
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
 	bool bHasBlueGun = false;
@@ -136,14 +129,6 @@ public:
 	//주황색 포탈을 쏠 수 있는 권한
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
 	bool bHasOrangeGun = false;
-	
-	// //생성된 파란색 포탈의 주소를 기억합니다.
-	// UPROPERTY(Transient)
-	// TObjectPtr<ACustomPortal> BluePortal;
-	//
-	// //생성된 주황색 포탈의 주소를 기억합니다.
-	// UPROPERTY(Transient)
-	// TObjectPtr<ACustomPortal> OrangePortal;
 	
 };
 

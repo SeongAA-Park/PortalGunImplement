@@ -26,7 +26,7 @@ void UPortalGunComponent::BeginPlay()
 	//캐릭터의 델리게이트 연결
 	if (APortalGunImplementCharacter* PlayCharacter = Cast<APortalGunImplementCharacter>(GetOwner()))
 	{
-		PlayCharacter->OnPortalShot.AddDynamic(this, &ThisClass::HandlePortalShot);
+		//PlayCharacter->OnPortalShot.AddDynamic(this, &ThisClass::HandlePortalShot);
 	}
 
 	// ...
