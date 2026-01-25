@@ -54,9 +54,6 @@ protected:
 	UPROPERTY(EditAnywhere, Category ="Input")
 	UInputAction* MouseLookAction;
 	
-	
-	
-	// ~~~추가함~~~
 	// about Portal Action
 	// UPROPERTY(EditAnywhere, Category ="Input|Portal")
 	// TObjectPtr<UInputAction> ShootBluePT;
@@ -67,8 +64,7 @@ protected:
 	// /**PortalGun 조작에 관한 Input Action*/
 	// UPROPERTY(EditAnywhere, Category ="Input")
 	// TObjectPtr<class UInputMappingContext> PortalMappingContext;
-	
-	
+
 	
 public:
 	APortalGunImplementCharacter();
@@ -103,8 +99,8 @@ protected:
 	virtual void DoJumpEnd();
 	
 	//포탈 관련 action 입력 시 실행될 함수들
-	void InputShootBluePT();
-	void InputShootOrangePT();
+	//void InputShootBluePT();
+	//void InputShootOrangePT();
 
 protected:
 
@@ -121,14 +117,14 @@ public:
 	UCameraComponent* GetFirstPersonCameraComponent() const { return FirstPersonCameraComponent; }
 	
 //about Portal	
-public:
-	//파란색 포탈을 쏠 수 있는 권한
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
-	bool bHasBlueGun = false;
-	
-	//주황색 포탈을 쏠 수 있는 권한
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
-	bool bHasOrangeGun = false;
+// public:
+// 	//파란색 포탈을 쏠 수 있는 권한
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
+// 	bool bHasBlueGun = false;
+// 	
+// 	//주황색 포탈을 쏠 수 있는 권한
+// 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
+// 	bool bHasOrangeGun = false;
 	
 };
 
