@@ -6,6 +6,7 @@
 #include "Portal/PortalGunShooterCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
+#include "SNegativeActionButton.h"
 #include "Camera/CameraComponent.h"
 
 // Sets default values
@@ -55,7 +56,7 @@ void APortalGun::BeginPlay()
 		{
 			// 캐릭터의 메쉬에 이 총을 부착 (이전에 만든 함수 활용)
 			// 주의: 포탈건 캐릭터가 인터페이스를 안 쓴다면 직접 함수를 호출해야 함
-			PortalHoldingPlayer->AttachWeaponMeshes(this); 
+			//PortalHoldingPlayer->AttachWeaponMeshes(this); 이미 PortalGunCharacter의 BeginPlay에서 사용중
 		}
 	}
 	
@@ -69,7 +70,11 @@ void APortalGun::HandlePortalShot(int32 PortalColorIndex)
 
 void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 {
-	if (!PortalHoldingPlayer || !PortalClass) return; 
+	if (!PortalHoldingPlayer || !PortalClass)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Can't make PortalBeam"));
+		return; 
+	}
 
     // 1. 캐릭터의 시선 정중앙 타겟 위치 가져오기 (ArenaShooter 방식 활용)
     FVector TargetLocation = PortalHoldingPlayer->GetWeaponTargetLocation();

@@ -66,11 +66,11 @@ protected:
 public:
 	//파란색 포탈을 쏠 수 있는 권한
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
-	bool bHasBlueGun = true;
+	bool bHasBlueGun = false;
 	
 	//주황색 포탈을 쏠 수 있는 권한
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category="Portal|Ability")
-	bool bHasOrangeGun = true;
+	bool bHasOrangeGun = false;
 
 public:
 	//포탈건이 구독할 방송 신호 변수

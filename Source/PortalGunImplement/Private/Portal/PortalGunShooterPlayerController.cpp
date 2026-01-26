@@ -6,6 +6,11 @@
 #include "EnhancedInputSubsystems.h"
 #include "Widgets/Input/SVirtualJoystick.h"
 
+void APortalGunShooterPlayerController::BeginPlay()
+{
+	Super::BeginPlay();
+}
+
 void APortalGunShooterPlayerController::SetupInputComponent()
 {
 	// only add IMCs for local player controllers

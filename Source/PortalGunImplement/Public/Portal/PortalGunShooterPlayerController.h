@@ -28,7 +28,7 @@ protected:
 protected:
 
 	/** Gameplay Initialization */
-	//virtual void BeginPlay() override;
+	virtual void BeginPlay() override;
 
 	/** Initialize input bindings */
 	virtual void SetupInputComponent() override;
