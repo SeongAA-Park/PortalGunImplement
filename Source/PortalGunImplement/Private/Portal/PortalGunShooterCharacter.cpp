@@ -30,7 +30,7 @@ void APortalGunShooterCharacter::AttachWeaponMeshes(APortalGun* Weapon)
 	Weapon->GetThirdPersonMesh()->AttachToComponent(GetMesh(), AttachmentRule, FirstPersonWeaponSocket);
 }
 
-FVector APortalGunShooterCharacter::GetWeaponTargetLocation()
+FHitResult APortalGunShooterCharacter::GetWeaponTargetLocation()
 {
 	// trace ahead from the camera viewpoint
 	FHitResult OutHit;
@@ -67,7 +67,8 @@ FVector APortalGunShooterCharacter::GetWeaponTargetLocation()
 	// --- 디버그 라인 추가 끝 ---
 	
 	// return either the impact point or the trace end
-	return OutHit.bBlockingHit ? OutHit.ImpactPoint : OutHit.TraceEnd;
+	//return OutHit.bBlockingHit ? OutHit.ImpactPoint : OutHit.TraceEnd;
+	return OutHit;
 }
 
 void APortalGunShooterCharacter::OnPortalGunActivated(APortalGun* Weapon)

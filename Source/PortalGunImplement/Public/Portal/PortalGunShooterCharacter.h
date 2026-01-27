@@ -13,7 +13,7 @@ class APortalGun;
  * 
  */
 // 델리게이트 선언 (정수형 매개변수: 0은 파란색, 1은 주황색 포탈), from PortalGunImplementCharacter
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPortalShotSignature, int32, PortalColorIndex);
+//DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPortalShotSignature, int32, PortalColorIndex);
 
 UCLASS()
 class PORTALGUNIMPLEMENT_API APortalGunShooterCharacter : public APortalGunImplementCharacter
@@ -74,8 +74,8 @@ public:
 
 public:
 	//포탈건이 구독할 방송 신호 변수
-	UPROPERTY(BlueprintAssignable, Category = "Portal")
-	FOnPortalShotSignature OnPortalShot;
+	// UPROPERTY(BlueprintAssignable, Category = "Portal")
+	// FOnPortalShotSignature OnPortalShot;
 	
 public:
 	APortalGunShooterCharacter();
@@ -86,7 +86,7 @@ public:
 	void AttachWeaponMeshes(APortalGun* Weapon);
 	
 	/** Calculates and returns the aim location for the weapon, 카메라 정면의 조준 지점을 계산 */
-	FVector GetWeaponTargetLocation();
+	FHitResult GetWeaponTargetLocation();
 	
 	void OnPortalGunActivated(APortalGun* Weapon);
 

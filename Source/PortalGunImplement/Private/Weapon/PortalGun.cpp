@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "SNegativeActionButton.h"
 #include "Camera/CameraComponent.h"
+#include "Runtime/CoreUObject/Tests/UObject/PropertyStateTrackingTest.h"
 
 // Sets default values
 APortalGun::APortalGun()
@@ -72,61 +73,99 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 {
 	if (!PortalHoldingPlayer || !PortalClass)
 	{
-		UE_LOG(LogTemp, Warning, TEXT("Can't make PortalBeam"));
 		return; 
 	}
 
     // 1. 캐릭터의 시선 정중앙 타겟 위치 가져오기 (ArenaShooter 방식 활용)
-    FVector TargetLocation = PortalHoldingPlayer->GetWeaponTargetLocation();
+    //FVector TargetLocation = PortalHoldingPlayer->GetWeaponTargetLocation();
+	
+	//수정 : 캐릭터의 시선 정중앙의 타겟 정보 가져오기
+	FHitResult PlayerHitResult = PortalHoldingPlayer->GetWeaponTargetLocation();
     
     // 2. 실제 벽면의 Normal(법선)을 얻기 위해 카메라로부터 타겟까지 짧은 Trace 수행
-    FHitResult HitResult;
-    FVector TraceStart = PortalHoldingPlayer->GetFirstPersonCameraComponent()->GetComponentLocation();
-    FVector TraceEnd = TargetLocation;
+    //FHitResult HitResult;
+    //FVector TraceStart = PortalHoldingPlayer->GetFirstPersonCameraComponent()->GetComponentLocation();
+    //FVector TraceEnd = TargetLocation;
     
-    FCollisionQueryParams Params;
-    Params.AddIgnoredActor(this);
-    Params.AddIgnoredActor(PortalHoldingPlayer);
+    //FCollisionQueryParams Params;
+    //Params.AddIgnoredActor(this);
+    //Params.AddIgnoredActor(PortalHoldingPlayer);
 
-    if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, Params))
-    {
-        // 3. 포탈 소환 트랜스폼 계산
-        // 벽면에 겹쳐서 깜빡이는 Z-Fighting을 방지하기 위해 Normal 방향으로 0.1cm 띄움
-        FVector SpawnLocation = HitResult.ImpactPoint + (HitResult.ImpactNormal * 0.1f);
+    //if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, Params))
+    //{
+	
+	if (PlayerHitResult.bBlockingHit)
+	{
+		// 3. 포탈 소환 트랜스폼 계산
+		// 벽면에 겹쳐서 깜빡이는 Z-Fighting을 방지하기 위해 Normal 방향으로 0.1cm 띄움
+		FVector SpawnLocation = PlayerHitResult.ImpactPoint + (PlayerHitResult.ImpactNormal * 0.1f);
         
-        // 벽의 Normal 방향을 포탈의 앞방향(X축)으로 설정하여 벽에 평평하게 붙임
-        FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromX(HitResult.ImpactNormal);
+		// 벽의 Normal 방향을 포탈의 앞방향(X축)으로 설정하여 벽에 평평하게 붙임
+		FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromX(PlayerHitResult.ImpactNormal);
 
-        // 4. 기존 동일 색상 포탈 제거 (교체 로직)
-        if (ColorIndex == 0 && BluePortal) BluePortal->Destroy();
-        else if (ColorIndex == 1 && OrangePortal) OrangePortal->Destroy();
+		// 4. 기존 동일 색상 포탈 제거 (교체 로직)
+		if (ColorIndex == 0 && BluePortal) BluePortal->Destroy();
+		else if (ColorIndex == 1 && OrangePortal) OrangePortal->Destroy();
 
-        // 5. 액터 스폰 설정
-        FActorSpawnParameters SpawnParams;
-        SpawnParams.Owner = this;
-        SpawnParams.Instigator = PortalHoldingPlayer;
+		// 5. 액터 스폰 설정
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.Owner = this;
+		SpawnParams.Instigator = PortalHoldingPlayer;
+    	
+		// [추가!] 충돌 조건과 상관없이 항상 스폰하도록 설정
+		//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-        // 실제 포탈 스폰
-        ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
+		// 실제 포탈 인스턴스 스폰
+		ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
         
-        if (NewPortal)
-        {
-            NewPortal->PortalID = ColorIndex;
+		if (NewPortal)
+		{
+			NewPortal->PortalID = ColorIndex;
             
-            // 6. 관리용 변수에 저장 및 디버그 라인 표시
-            if (ColorIndex == 0) BluePortal = NewPortal;
-            else OrangePortal = NewPortal;
+			// 6. 관리용 변수에 저장 및 디버그 라인 표시
+			if (ColorIndex == 0) BluePortal = NewPortal;
+			else OrangePortal = NewPortal;
+			
+			if (BluePortal && OrangePortal)
+			{
+				BluePortal->LinkedPortal = OrangePortal;
+				OrangePortal->LinkedPortal = BluePortal;
+				
+				// 화면에 성공 메시지 출력
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,                 // Key: -1은 메시지를 덮어쓰지 않고 계속 새로 출력
+						5.0f,               // TimeToDisplay: 5초 동안 표시
+						FColor::Green,       // DisplayColor: 연결 성공을 알리는 청록색
+						TEXT("Portals Linked Successfully!") // DebugMessage
+					);
+				}
+			}
 
-            // 시각적 피드백: 총구 소켓 위치 가져오기
-            FVector MuzzleLoc = FirstPersonMesh->GetSocketLocation(MuzzleSocketName);
-            // 발사 방향에 따른 디버그 라인 (파랑/주황 구분)
-            FColor DebugColor = (ColorIndex == 0) ? FColor::Blue : FColor::Orange;
-            DrawDebugLine(GetWorld(), MuzzleLoc, HitResult.ImpactPoint, DebugColor, false, 1.0f, 0, 2.0f);
-        }
+			// 시각적 피드백: 총구 소켓 위치 가져오기
+			FVector MuzzleLoc = FirstPersonMesh->GetSocketLocation(MuzzleSocketName);
+			// 발사 방향에 따른 디버그 라인 (파랑/주황 구분)
+			FColor DebugColor = (ColorIndex == 0) ? FColor::Blue : FColor::Orange;
+			DrawDebugLine(GetWorld(), MuzzleLoc, PlayerHitResult.ImpactPoint, DebugColor, false, 1.0f, 0, 2.0f);
+		}
 
-        // 7. AI 인지 시스템에 소음 전달 (ArenaShooter 이식)
-        MakeNoise(ShotLoudness, PortalHoldingPlayer, GetActorLocation(), ShotNoiseRange);
-    }
+		// 7. AI 인지 시스템에 소음 전달 (ArenaShooter 이식)
+		MakeNoise(ShotLoudness, PortalHoldingPlayer, GetActorLocation(), ShotNoiseRange);
+	}
+    //}
+	// else
+	// {
+	// 	if (GEngine)
+	// 	{
+	// 		GEngine->AddOnScreenDebugMessage(
+	// 		-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
+	// 		3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
+	// 		FColor::Red, // DisplayColor: 텍스트 색상
+	// 		TEXT("Can't make Portal!") // DebugMessage: 출력할 문자열
+	// 		);
+	// 	}
+	// }
 }
 
 const TSubclassOf<UAnimInstance>& APortalGun::GetFirstPersonAnimInstanceClass() const
