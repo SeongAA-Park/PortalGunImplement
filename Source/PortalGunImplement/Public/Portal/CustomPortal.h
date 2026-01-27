@@ -39,5 +39,8 @@ public:
 	//4.연결된 반대편 포탈 참조
 	UPROPERTY(BlueprintReadWrite, Category = "Portal")
 	TObjectPtr<ACustomPortal> LinkedPortal;
+	
+protected:
+	void UpdatePortalView();
 
 };
