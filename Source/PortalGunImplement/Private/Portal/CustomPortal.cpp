@@ -8,32 +8,31 @@
 // Sets default values
 ACustomPortal::ACustomPortal()
 {
- 	// Set this actor to call Tick() every frame.  You can turn this off to improve performance if you don't need it.
 	PrimaryActorTick.bCanEverTick = true;
-	//나중에 카메라 위치 계산을 위해 Tick을 킨다.
-	
-	//포탈 메쉬 생성 및 루트로 설정
+
+	// 1. 아무 회전이 없는 깨끗한 'SceneComponent'를 루트로 설정합니다.
+	// 이것이 포탈의 수학적 기준점(Forward=+X, Up=+Z)이 됩니다.
+	USceneComponent* DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
+	RootComponent = DummyRoot;
+
+	// 2. 메쉬를 루트에 붙이고 외형만 회전시킵니다.
 	PortalMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PortalMesh"));
-	RootComponent = PortalMesh;
-	
-	//포탈 메쉬 : 기본 Plane 메쉬로 설정
+	PortalMesh->SetupAttachment(RootComponent);
+    
 	static ConstructorHelpers::FObjectFinder<UStaticMesh> PlaneMeshAsset(TEXT("/Engine/BasicShapes/Plane.Plane"));
 	if (PlaneMeshAsset.Succeeded())
 	{
 		PortalMesh->SetStaticMesh(PlaneMeshAsset.Object);
 	}
-	//포탈 외형 조정 (회전 및 직사각형비율)
-	PortalMesh->SetRelativeRotation(FRotator(90.0f, 180.0f, 0.0f));
+	
+	// 시각적 보정만 수행 (Actor의 정면인 +X를 바라보게 세움)
+	PortalMesh->SetRelativeRotation(FRotator(90.0f, 0.0f, 0.0f)); //Y축에 180 회전 수행해줘야함... 안하면 투명한 부분이 표면으로 출력 >> Material Two Side로 해결! >> 근데 그렇게 해도 반대되는 view가 나와서 180도 회전하는거랑 똑같음
 	PortalMesh->SetRelativeScale3D(FVector(3.f, 2.f, 1.0f));
 	
-	//포탈 메쉬가 LineTrace에 맞으면 안되므로 충돌 설정을 끈다.
-	PortalMesh->SetCollisionResponseToChannel(ECC_Visibility, ECR_Ignore);
-	
-	//씬 캡쳐 카메라 생성 및 부착
+	// 3. 카메라는 루트에 붙입니다. (메쉬가 돌아가도 영향을 받지 않도록)
 	PortalCamera = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("PortalCamera"));
 	PortalCamera->SetupAttachment(RootComponent);
-	
-	//[최적화 관련 중요 설정!]성능을 위해 자동으로 모든 것을 찍지 않도록 하기위한 설정, 우리가 필요할 때(Tick에서)만 수동으로 찍게 할 것!
+    
 	PortalCamera->bCaptureEveryFrame = false;
 	PortalCamera->bCaptureOnMovement = false;
 }
@@ -70,24 +69,42 @@ void ACustomPortal::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
+	// 연결된 포탈이 있고, 내가 플레이어 시야에 보일 때만 상대방 카메라를 내 쪽으로 동기화
+	if (LinkedPortal && WasRecentlyRendered(0.1f)) 
+	{
+		UpdatePortalView();
+	}
 }
 
 void ACustomPortal::UpdatePortalView()
 {
-	// if (!LinkedPortal || !PortalCamera) return;
-	//
-	// //플레이어 카메라 정보 가져오기
-	// APlayerCameraManager* CamManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
-	//
-	// FVector CamLocation = CamManager->GetCameraLocation();
-	// FRotator CamRotation = CamManager->GetCameraRotation();
-	// FTransform PlayerCamTransform(CamRotation, CamLocation);
-	//
-	// // 플레이어와 포탈A간의 상대적 위치 계산
-	// FTransform CharNPotARelativeTransform = PlayerCamTransform.GetRelativeTransform(GetActorTransform());
-	//
-	// // 거울과 같은 view를 위해 Flip
-	// FTransform FlipViewTransform = 
+	if (!LinkedPortal || !PortalCamera) return;
+	
+	//플레이어 카메라 정보 가져오기
+	APlayerCameraManager* CamManager = GetWorld()->GetFirstPlayerController()->PlayerCameraManager;
+	FTransform PlayerCamTransform(CamManager->GetCameraRotation(),  CamManager->GetCameraLocation());
+	
+	// 플레이어와 포탈A간의 상대적 위치 계산
+	FTransform CharNCurrentPotRelativeTransform = PlayerCamTransform.GetRelativeTransform(GetActorTransform());
+	
+	// 쿼터니언을 이용해 상대 위치와 회전을 거울상으로 뒤집습니다.
+	FQuat FlipQuat(FVector(0, 0, 1), FMath::DegreesToRadians(180.f));
+	FVector MirroredLocation = FlipQuat.RotateVector(CharNCurrentPotRelativeTransform.GetLocation());
+	FQuat MirroredRotation = FlipQuat * CharNCurrentPotRelativeTransform.GetRotation();
+	FTransform MirroredTransform(MirroredRotation, MirroredLocation);
+	
+	// [Step 4] 반전된 시점을 상대방 포탈(B)의 월드 위치로 투영 (Mirrored * M_PortalB)
+	FTransform FinalTransform = MirroredTransform * LinkedPortal->GetActorTransform();
+	UE_LOG(LogTemp, Warning, TEXT("%f, %f, %f"), FinalTransform.GetLocation().X, FinalTransform.GetLocation().Y, FinalTransform.GetLocation().Z);
+	
+	// [Step 5] 내 카메라를 최종 월드 위치로 이동 및 장면 캡처
+	//LinkedPortal->PortalCamera->SetRelativeTransform(FinalTransform);
+	PortalCamera->SetWorldTransform(FinalTransform);
+	
+	// 5. 장면 캡처 실행 (수동 호출)
+	//LinkedPortal->PortalCamera->CaptureScene();
+	PortalCamera->CaptureScene();
+	
 	
 }
 

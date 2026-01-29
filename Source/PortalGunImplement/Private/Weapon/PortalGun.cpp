@@ -75,28 +75,13 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 	{
 		return; 
 	}
-
-    // 1. 캐릭터의 시선 정중앙 타겟 위치 가져오기 (ArenaShooter 방식 활용)
-    //FVector TargetLocation = PortalHoldingPlayer->GetWeaponTargetLocation();
 	
 	//수정 : 캐릭터의 시선 정중앙의 타겟 정보 가져오기
 	FHitResult PlayerHitResult = PortalHoldingPlayer->GetWeaponTargetLocation();
-    
-    // 2. 실제 벽면의 Normal(법선)을 얻기 위해 카메라로부터 타겟까지 짧은 Trace 수행
-    //FHitResult HitResult;
-    //FVector TraceStart = PortalHoldingPlayer->GetFirstPersonCameraComponent()->GetComponentLocation();
-    //FVector TraceEnd = TargetLocation;
-    
-    //FCollisionQueryParams Params;
-    //Params.AddIgnoredActor(this);
-    //Params.AddIgnoredActor(PortalHoldingPlayer);
-
-    //if (GetWorld()->LineTraceSingleByChannel(HitResult, TraceStart, TraceEnd, ECC_Visibility, Params))
-    //{
 	
 	if (PlayerHitResult.bBlockingHit)
 	{
-		// 3. 포탈 소환 트랜스폼 계산
+		// 포탈 소환 트랜스폼 계산
 		// 벽면에 겹쳐서 깜빡이는 Z-Fighting을 방지하기 위해 Normal 방향으로 0.1cm 띄움
 		FVector SpawnLocation = PlayerHitResult.ImpactPoint + (PlayerHitResult.ImpactNormal * 0.1f);
         
@@ -122,10 +107,11 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		{
 			NewPortal->PortalID = ColorIndex;
             
-			// 6. 관리용 변수에 저장 및 디버그 라인 표시
+			// 관리용 변수에 저장 및 디버그 라인 표시
 			if (ColorIndex == 0) BluePortal = NewPortal;
 			else OrangePortal = NewPortal;
 			
+			// 연결 가능한 포탈이 있다면 내부 변수로 저장하기
 			if (BluePortal && OrangePortal)
 			{
 				BluePortal->LinkedPortal = OrangePortal;
