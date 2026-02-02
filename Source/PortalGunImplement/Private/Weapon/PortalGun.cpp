@@ -86,7 +86,34 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		FVector SpawnLocation = PlayerHitResult.ImpactPoint + (PlayerHitResult.ImpactNormal * 0.1f);
         
 		// 벽의 Normal 방향을 포탈의 앞방향(X축)으로 설정하여 벽에 평평하게 붙임
-		FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromX(PlayerHitResult.ImpactNormal);
+		//FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromX(PlayerHitResult.ImpactNormal);
+		
+		// 수정 : 기존의 SpawnRotation 계산에서는 Roll이 불안정했을 수 있음
+		const FVector N = PlayerHitResult.ImpactNormal.GetSafeNormal();
+
+		// 1) 기준 Up 후보: 보통은 월드 Up
+		FVector UpCandidate = FVector::UpVector;
+
+		// 2) 바닥/천장처럼 N이 UpCandidate와 거의 평행이면, 카메라 forward를 사용
+		const float Parallel = FMath::Abs(FVector::DotProduct(N, UpCandidate));
+		if (Parallel > 0.95f)
+		{
+			UpCandidate = PortalHoldingPlayer->GetFirstPersonCameraComponent()->GetForwardVector();
+		}
+
+		// 3) UpCandidate를 포탈 평면에 투영해서 "진짜 Up" 만들기
+		FVector Z = (UpCandidate - FVector::DotProduct(UpCandidate, N) * N).GetSafeNormal();
+
+		// 4) 그래도 실패하면(아주 특수) 임시로 Right 기반
+		if (Z.IsNearlyZero())
+		{
+			UpCandidate = PortalHoldingPlayer->GetFirstPersonCameraComponent()->GetRightVector();
+			Z = (UpCandidate - FVector::DotProduct(UpCandidate, N) * N).GetSafeNormal();
+		}
+
+		// 5) X=N, Z=portal up 으로 회전 구성
+		const FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromXZ(N, Z);
+
 
 		// 4. 기존 동일 색상 포탈 제거 (교체 로직)
 		if (ColorIndex == 0 && BluePortal) BluePortal->Destroy();
