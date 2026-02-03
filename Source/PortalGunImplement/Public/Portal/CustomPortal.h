@@ -32,6 +32,15 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<class USceneCaptureComponent2D> PortalCamera;
 	
+	//(beginplay로부터 전역변수화) PortalCamera가 찍은 장면(Scene Capture)을 픽셀 이미지로 렌더링해서 저장해두는 버퍼
+	UPROPERTY(Transient, VisibleInstanceOnly, Category="Portal")
+	TObjectPtr<class UTextureRenderTarget2D> PortalRT;
+
+	//(beginplay로부터 전역변수화) PortalCamera에 지정해줄 Material - 런타임에 파라미터만 바꿔 머터리얼 변경 가능
+	UPROPERTY(Transient, VisibleInstanceOnly, Category="Portal")
+	TObjectPtr<class UMaterialInstanceDynamic> PortalMID;
+
+	
 	//3.포탈 종류 구분
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Portal")
 	int32 PortalID;
@@ -39,5 +48,8 @@ public:
 	//4.연결된 반대편 포탈 참조
 	UPROPERTY(BlueprintReadWrite, Category = "Portal")
 	TObjectPtr<ACustomPortal> LinkedPortal;
-
+	
+protected:
+	void UpdatePortalView();
+	void UpdatePortalView2(); //포탈 예제를 기반으로 작성해본 코드
 };

@@ -87,10 +87,12 @@ protected:
 	void RespawnPickup();
 
 	/** Passes control to Blueprint to animate the pickup respawn. Should end by calling FinishRespawn */
+	// BlueprintImplementableEvent : 이 함수는 블루프린트 또는 레벨 블루프린트 그래프에서 구현할 수 있습니다.
 	UFUNCTION(BlueprintImplementableEvent, Category="Pickup", meta = (DisplayName = "OnRespawn"))
 	void BP_OnRespawn();
 
 	/** Enables this pickup after respawning */
+	// BlueprintCallable : 이 함수는 블루프린트 또는 레벨 블루프린트 그래프에서 실행할 수 있습니다.
 	UFUNCTION(BlueprintCallable, Category="Pickup")
 	void FinishRespawn();
 };

@@ -37,7 +37,6 @@ void APortalGunImplementPlayerController::BeginPlay()
 			UE_LOG(LogPortalGunImplement, Error, TEXT("Could not spawn mobile controls widget."));
 
 		}
-
 	}
 }
 
