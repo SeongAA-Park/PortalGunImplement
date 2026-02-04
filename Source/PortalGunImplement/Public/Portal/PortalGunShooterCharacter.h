@@ -4,6 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "PortalGunImplementCharacter.h"
+#include "PhysicsEngine/PhysicsHandleComponent.h"
 #include "PortalGunShooterCharacter.generated.h"
 
 class UInputAction;
@@ -24,8 +25,12 @@ class PORTALGUNIMPLEMENT_API APortalGunShooterCharacter : public APortalGunImple
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Components", meta = (AllowPrivateAccess = "true"))
 	UPawnNoiseEmitterComponent* PawnNoiseEmitter;
 	
+	//player의 기능 추가 : E 버튼으로 임의의 물체를 허공에 붙잡고 놓을 수 있어야 함
+	//Add PhysicsHandle : Physics Handle Component
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Character",meta=(AllowPrivateAccess = "true"))
+	UPhysicsHandleComponent* PhysicsHandle; 
+	
 protected:
-	//Added
 	// about Portal Action - Fire BluePortal
 	UPROPERTY(EditAnywhere, Category ="Input|Portal")
 	TObjectPtr<UInputAction> ShootBluePT;
@@ -34,6 +39,11 @@ protected:
 	// about Portal Action - Fire OrangePortal
 	UPROPERTY(EditAnywhere, Category ="Input|Portal")
 	TObjectPtr<UInputAction> ShootOrangePT;
+	
+	//Added
+	//about Portal Action - Grab PhysicsObject
+	UPROPERTY(EditAnywhere, Category ="Input|Portal")
+	TObjectPtr<UInputAction> GrabPhysicsObject;
 	
 	//Copied
 	/** Name of the first person mesh weapon socket */
@@ -100,5 +110,7 @@ public:
 	void InputShootBluePT();
 	
 	void InputShootOrangePT();
+	
+	void InputGrabPhysicsObject();
 	
 };
