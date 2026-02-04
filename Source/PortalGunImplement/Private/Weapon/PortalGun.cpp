@@ -114,8 +114,9 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		// 5) X=N, Z=portal up 으로 회전 구성
 		const FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromXZ(N, Z);
 
+		// --- 기존 rotation 코드 수정 완 ---
 
-		// 4. 기존 동일 색상 포탈 제거 (교체 로직)
+		// 4. 기존 동일 색상 포탈 제거 (교체 로직) / 추후 object pool 방식으로 변경 고려
 		if (ColorIndex == 0 && BluePortal) BluePortal->Destroy();
 		else if (ColorIndex == 1 && OrangePortal) OrangePortal->Destroy();
 
@@ -127,7 +128,7 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		// [추가!] 충돌 조건과 상관없이 항상 스폰하도록 설정
 		//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
-		// 실제 포탈 인스턴스 스폰
+		// [중요!] 실제 포탈 인스턴스 스폰
 		ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
         
 		if (NewPortal)

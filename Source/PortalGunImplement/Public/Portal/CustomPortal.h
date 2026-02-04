@@ -29,7 +29,7 @@ public:
 	TObjectPtr<class UStaticMeshComponent> PortalMesh;
 	
 	//2.반대편을 찍어서 보여줄 카메라
-	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Portal")
+	UPROPERTY(VisibleAnywhere, BlueprintReadWrite, Category = "Portal")
 	TObjectPtr<class USceneCaptureComponent2D> PortalCamera;
 	
 	//(beginplay로부터 전역변수화) PortalCamera가 찍은 장면(Scene Capture)을 픽셀 이미지로 렌더링해서 저장해두는 버퍼
@@ -51,5 +51,6 @@ public:
 	
 protected:
 	void UpdatePortalView();
+	
 	void UpdatePortalView2(); //포탈 예제를 기반으로 작성해본 코드
 };

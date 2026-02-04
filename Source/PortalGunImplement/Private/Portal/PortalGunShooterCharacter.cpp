@@ -16,6 +16,10 @@ APortalGunShooterCharacter::APortalGunShooterCharacter()
 
 	// configure movement
 	GetCharacterMovement()->RotationRate = FRotator(0.0f, 600.0f, 0.0f);
+	
+	//physicshandlecomponent 추가
+	PhysicsHandle = CreateDefaultSubobject<UPhysicsHandleComponent>(TEXT("PortalGunPlayerPhysicsHandle"));
+	PhysicsHandle->LinearDamping = 200.0f;
 }
 
 void APortalGunShooterCharacter::AttachWeaponMeshes(APortalGun* Weapon)
@@ -56,13 +60,13 @@ FHitResult APortalGunShooterCharacter::GetWeaponTargetLocation()
 		false,      // bPersistentLines: 영구 표시 여부
 		2.0f,       // LifeTime: 2초 동안 표시
 		0,          // DepthPriority
-		1.0f        // Thickness: 선 두께
+		0.2f        // Thickness: 선 두께
 	);
 
 	// 충돌했을 경우 충돌 지점에 작은 구체 표시
 	if (bHit)
 	{
-		DrawDebugSphere(GetWorld(), OutHit.ImpactPoint, 10.f, 12, FColor::Blue, false, 2.0f);
+		DrawDebugSphere(GetWorld(), OutHit.ImpactPoint, 8.f, 12, FColor::Blue, false, 1.0f);
 	}
 	// --- 디버그 라인 추가 끝 ---
 	
@@ -137,6 +141,12 @@ void APortalGunShooterCharacter::SetupPlayerInputComponent(class UInputComponent
 		{
 			EnhancedInputComponent->BindAction(ShootOrangePT, ETriggerEvent::Started, this, &ThisClass::InputShootOrangePT);
 		}
+		
+		//새로 추가
+		if (GrabPhysicsObject)
+		{
+			EnhancedInputComponent->BindAction(GrabPhysicsObject, ETriggerEvent::Started, this, &ThisClass::InputGrabPhysicsObject);
+		}
 	}
 }
 
@@ -145,15 +155,15 @@ void APortalGunShooterCharacter::InputShootBluePT()
 	//여기에 포탈건 발사 사운드, 이펙트, 델리게이트 등이 들어갈 수 있습니다. -> Has-a 관계이기에 델리게이트 불필요
 	//UE_LOG(LogTemp, Warning, TEXT("Blue Portal Shot! BroadCast PortalColorIndexValue 0"));
 	
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
-			3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
-			FColor::Blue, // DisplayColor: 텍스트 색상
-			TEXT("Blue Portal Shot!") // DebugMessage: 출력할 문자열
-		);
-	}
+	// if (GEngine)
+	// {
+	// 	GEngine->AddOnScreenDebugMessage(
+	// 		-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
+	// 		3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
+	// 		FColor::Blue, // DisplayColor: 텍스트 색상
+	// 		TEXT("Blue Portal Shot!") // DebugMessage: 출력할 문자열
+	// 	);
+	// }
 	
 	//전달할 값 방송
 	//OnPortalShot.Broadcast(0);
@@ -168,20 +178,36 @@ void APortalGunShooterCharacter::InputShootOrangePT()
 	//여기에 포탈건 발사 사운드, 이펙트, 델리게이트 등이 들어갈 수 있습니다.
 	//UE_LOG(LogTemp, Warning, TEXT("Orange Portal Shot! BroadCast PortalColorIndexValue 1"));
 	
-	if (GEngine)
-	{
-		GEngine->AddOnScreenDebugMessage(
-			-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
-			3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
-			FColor::Orange, // DisplayColor: 텍스트 색상
-			TEXT("Orange Portal Shot!") // DebugMessage: 출력할 문자열
-		);
-	}
+	// if (GEngine)
+	// {
+	// 	GEngine->AddOnScreenDebugMessage(
+	// 		-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
+	// 		3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
+	// 		FColor::Orange, // DisplayColor: 텍스트 색상
+	// 		TEXT("Orange Portal Shot!") // DebugMessage: 출력할 문자열
+	// 	);
+	// }
 	//전달할 값 방송
 	//OnPortalShot.Broadcast(1);
 	if (CurrentWeapon != nullptr && bHasOrangeGun )
 	{
 		CurrentWeapon->HandlePortalShot(1);
 	}
+}
+
+void APortalGunShooterCharacter::InputGrabPhysicsObject()
+{
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(
+			-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
+			3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
+			FColor::Green, // DisplayColor: 텍스트 색상
+			TEXT("Pressed E Button, Grap Physics Object") // DebugMessage: 출력할 문자열
+		);
+	}
+	
+	//캐릭터 쪽에 physicshandle 관련 함수 만들기...여기가 캐릭터구나
+	
 }
 
