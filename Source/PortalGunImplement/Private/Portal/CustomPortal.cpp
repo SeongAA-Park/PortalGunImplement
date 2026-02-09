@@ -2,8 +2,14 @@
 
 
 #include "Portal/CustomPortal.h"
+
+#include "Components/BoxComponent.h"
 #include "Components/SceneCaptureComponent2D.h"
+#include "Components/StaticMeshComponent.h"
+#include "Components/PrimitiveComponent.h" // Ignore 관련 기능을 위해 필요
 #include "Engine/TextureRenderTarget2D.h"
+#include "GameFramework/Pawn.h"     // IsA(APawn) 및 MoveIgnore를 위해 필요
+#include "Engine/EngineTypes.h"
 
 // Sets default values
 ACustomPortal::ACustomPortal()
@@ -15,7 +21,7 @@ ACustomPortal::ACustomPortal()
 	USceneComponent* DummyRoot = CreateDefaultSubobject<USceneComponent>(TEXT("DefaultSceneRoot"));
 	RootComponent = DummyRoot;
 
-	// 2. 메쉬를 루트에 붙이고 외형만 회전시킵니다.
+	// 메쉬를 루트에 붙이고 외형만 회전시키기
 	PortalMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("PortalMesh"));
 	PortalMesh->SetupAttachment(RootComponent);
     
@@ -33,13 +39,28 @@ ACustomPortal::ACustomPortal()
 	PortalCamera = CreateDefaultSubobject<USceneCaptureComponent2D>(TEXT("PortalCamera"));
 	PortalCamera->SetupAttachment(RootComponent);
 	
+	// 1. 컴포넌트 생성 및 루트에 부착
+	DetectBoxCollision = CreateDefaultSubobject<UBoxComponent>(TEXT("DetectBoxCollision"));
+	DetectBoxCollision->SetupAttachment(RootComponent);
+
+	// 2. 기본 콜리전 설정
+	DetectBoxCollision->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	DetectBoxCollision->SetCollisionResponseToAllChannels(ECR_Ignore);
+    
+	// 통과 대상 채널들만 Overlap으로 설정
+	DetectBoxCollision->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	DetectBoxCollision->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
+
+	// 3. 이벤트 바인딩 (함수와 연결)
+	DetectBoxCollision->OnComponentBeginOverlap.AddDynamic(this, &ACustomPortal::OnOverlapBegin);
+	DetectBoxCollision->OnComponentEndOverlap.AddDynamic(this, &ACustomPortal::OnOverlapEnd);
+	
+	
 	//(추가) Clip 평면 설정을 위한 PortalCamera의 Capture Source 설정
 	PortalCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
     
 	PortalCamera->bCaptureEveryFrame = false;
 	PortalCamera->bCaptureOnMovement = false;
-	
-	
 }
 
 // Called when the game starts or when spawned
@@ -49,7 +70,6 @@ void ACustomPortal::BeginPlay()
 	
 	// BeginPlay 또는 초기화 시 1회
 	PortalCamera->CaptureSource = ESceneCaptureSource::SCS_FinalColorLDR;
-
 	
 	// 화면 비율 확인을 위한 디버그코드 추가
 	const FVector S = PortalMesh ? PortalMesh->GetRelativeScale3D() : FVector(1);
@@ -172,7 +192,7 @@ void ACustomPortal::Tick(float DeltaTime)
 	// 연결된 포탈이 있고, 내가 플레이어 시야에 보일 때만 상대방 카메라를 내 쪽으로 동기화
 	if (LinkedPortal && WasRecentlyRendered(0.1f)) 
 	{
-		UpdatePortalView();
+		//UpdatePortalView(); //렌더링 on/off >> 일단 off
 	}
 }
 
@@ -306,6 +326,98 @@ void ACustomPortal::UpdatePortalView2()
 	//LinkedPortal->PortalCamera->CaptureScene();
 	PortalCamera->CaptureScene();
 	
+}
+
+void ACustomPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	// 1. 유효성 검사 (AttachedWall이 있는지 먼저 확인)
+	if (!OtherActor || !AttachedWall.IsValid()) return;
+
+	// 2. 통과 대상인지 확인 (태그 또는 플레이어)
+	bool bHasTag = OtherActor->ActorHasTag(FName("PortalPassable"));
+	bool bIsPawn = OtherActor->IsA(APawn::StaticClass());
+	const bool bIsPassable = bHasTag || bIsPawn;
+
+	if (bIsPassable)
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,                      // Key: -1이면 새 메시지 추가, 특정 숫자면 해당 메시지 갱신
+				3.f,                     // TimeToDisplay: 메시지가 떠 있을 시간 (초)
+				FColor::Emerald,            // DisplayColor: 텍스트 색상
+				TEXT("Overlapped Actor is Passable")     // DebugMessage: 출력할 내용
+			);
+		}
+		
+		// 포탈이 붙어있는 벽의 포인터 가져오기
+		AActor* WallToIgnore = AttachedWall.Get();
+		// 충돌한 액터의 RootComponent 가져오기
+		UPrimitiveComponent* OverlapedActorRoot = Cast<UPrimitiveComponent>(OtherActor->GetRootComponent());
+		// 추가 : 벽의 루트 컴포넌트 가져오기
+		// UPrimitiveComponent* WallRoot = nullptr;
+		// if (WallToIgnore)
+		// {
+		// 	WallRoot = Cast<UPrimitiveComponent>(WallToIgnore->GetRootComponent());
+		// }
+		// 좀 더 간결하게 수정
+		UPrimitiveComponent* WallRoot = WallToIgnore? Cast<UPrimitiveComponent>(WallToIgnore->GetRootComponent()) : nullptr;
+		
+		//수정
+		if (OverlapedActorRoot && WallRoot)
+		{
+			if (OverlapedActorRoot->IsSimulatingPhysics())
+			{
+				// portalwall 채널에 대해 Overlap으로 변경
+				OverlapedActorRoot->SetCollisionResponseToChannel(ECC_GameTraceChannel2, ECR_Overlap);
+				
+				UE_LOG(LogTemp, Warning, TEXT("[Portal] Physics Actor %s: Set Overlap to PortalWall"), *OtherActor->GetName());
+			}
+			else
+			{
+				// Movement 기반 액터 (플레이어 등)
+				OverlapedActorRoot->IgnoreActorWhenMoving(WallToIgnore, true);
+				WallRoot->IgnoreActorWhenMoving(OtherActor, true);
+        
+				UE_LOG(LogTemp, Warning, TEXT("[Portal] Movement Actor %s: Using IgnoreActorWhenMoving"), *OtherActor->GetName());
+			}
+		}
+		
+		// 3. 물리 상태 갱신 (자고 있는 물리 엔진 깨우기)
+		if (OverlapedActorRoot->IsSimulatingPhysics())
+		{
+			OverlapedActorRoot->WakeAllRigidBodies();
+		}
+		
+	}
+}
+
+void ACustomPortal::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
+{
+	// 1. 유효성 검사
+	if (OtherActor && AttachedWall.IsValid())
+	{
+		AActor* WallToIgnore = AttachedWall.Get();
+		UPrimitiveComponent* OverlapedActorRoot = Cast<UPrimitiveComponent>(OtherActor->GetRootComponent());
+		UPrimitiveComponent* WallRoot = WallToIgnore ? Cast<UPrimitiveComponent>(WallToIgnore->GetRootComponent()) : nullptr;
+
+		if (!OverlapedActorRoot || !WallRoot) return;
+
+		// Physics 액터: Collision Response 복원
+		if (OverlapedActorRoot->IsSimulatingPhysics())
+		{
+			OverlapedActorRoot->SetCollisionResponseToChannel(ECC_GameTraceChannel1, ECR_Block);
+			UE_LOG(LogTemp, Log, TEXT("[Portal] Physics Actor %s: Restored Block to PortalWall"), *OtherActor->GetName());
+		}
+		else
+		{
+			// Movement 기반 액터
+			OverlapedActorRoot->IgnoreActorWhenMoving(WallToIgnore, false);
+			WallRoot->IgnoreActorWhenMoving(OtherActor, false);
+		}
+	}
 }
 
 

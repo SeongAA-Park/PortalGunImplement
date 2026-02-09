@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "SNegativeActionButton.h"
 #include "Camera/CameraComponent.h"
+#include "Interfaces/IPortalable.h"
 #include "Runtime/CoreUObject/Tests/UObject/PropertyStateTrackingTest.h"
 
 // Sets default values
@@ -69,6 +70,7 @@ void APortalGun::HandlePortalShot(int32 PortalColorIndex)
 	ExecutePortalTrace(PortalColorIndex);
 }
 
+//핵심함수
 void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 {
 	if (!PortalHoldingPlayer || !PortalClass)
@@ -133,6 +135,33 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
         
 		if (NewPortal)
 		{
+			// [추가] 인터페이스를 통해 벽 정보 전달
+			AActor* HitActor = PlayerHitResult.GetActor();
+        
+			// 1. 맞은 액터가 인터페이스를 구현했는지 확인
+			if (HitActor && HitActor->Implements<UIPortalable>())
+			{
+				// 2. 인터페이스 메시지를 호출하여 실제 벽 액터를 가져옴
+				// C++에서 인터페이스 함수를 호출할 때는 Execute_ 접두사를 사용합니다.
+				AActor* SurfaceActor = IIPortalable::Execute_GetPortalSurfaceActor(HitActor);
+            
+				// 3. 생성된 포탈에 벽 정보 전달
+				NewPortal->SetAttachedWall(SurfaceActor);
+				
+				if (GEngine)
+				{
+					GEngine->AddOnScreenDebugMessage(
+						-1,                      // Key: -1이면 새 메시지 추가, 특정 숫자면 해당 메시지 갱신
+						3.f,                     // TimeToDisplay: 메시지가 떠 있을 시간 (초)
+						FColor::Cyan,            // DisplayColor: 텍스트 색상
+						TEXT("Portalable Wall Weakptr is Saved On CustomPortal")     // DebugMessage: 출력할 내용
+					);
+				}
+				
+			}
+			
+			//새 포탈 생성 시 자신이 붙는 Wallptr : weakptr로 저장
+			
 			NewPortal->PortalID = ColorIndex;
             
 			// 관리용 변수에 저장 및 디버그 라인 표시
@@ -161,7 +190,7 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 			FVector MuzzleLoc = FirstPersonMesh->GetSocketLocation(MuzzleSocketName);
 			// 발사 방향에 따른 디버그 라인 (파랑/주황 구분)
 			FColor DebugColor = (ColorIndex == 0) ? FColor::Blue : FColor::Orange;
-			DrawDebugLine(GetWorld(), MuzzleLoc, PlayerHitResult.ImpactPoint, DebugColor, false, 1.0f, 0, 2.0f);
+			DrawDebugLine(GetWorld(), MuzzleLoc, PlayerHitResult.ImpactPoint, DebugColor, false, 1.0f, 0, 0.5f);
 		}
 
 		// 7. AI 인지 시스템에 소음 전달 (ArenaShooter 이식)

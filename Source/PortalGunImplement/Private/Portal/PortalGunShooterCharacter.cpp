@@ -58,9 +58,9 @@ FHitResult APortalGunShooterCharacter::GetWeaponTargetLocation()
 		End, 
 		LineColor, 
 		false,      // bPersistentLines: 영구 표시 여부
-		2.0f,       // LifeTime: 2초 동안 표시
+		1.0f,       // LifeTime: 2초 동안 표시
 		0,          // DepthPriority
-		0.2f        // Thickness: 선 두께
+		0.05f        // Thickness: 선 두께
 	);
 
 	// 충돌했을 경우 충돌 지점에 작은 구체 표시
@@ -195,7 +195,7 @@ void APortalGunShooterCharacter::InputShootOrangePT()
 	}
 }
 
-void APortalGunShooterCharacter::InputGrabPhysicsObject()
+void APortalGunShooterCharacter::InputGrabPhysicsObject_Implementation()
 {
 	if (GEngine)
 	{
@@ -206,8 +206,21 @@ void APortalGunShooterCharacter::InputGrabPhysicsObject()
 			TEXT("Pressed E Button, Grap Physics Object") // DebugMessage: 출력할 문자열
 		);
 	}
-	
-	//캐릭터 쪽에 physicshandle 관련 함수 만들기...여기가 캐릭터구나
-	
 }
+
+// void APortalGunShooterCharacter::InputGrabPhysicsObject()
+// {
+// 	if (GEngine)
+// 	{
+// 		GEngine->AddOnScreenDebugMessage(
+// 			-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
+// 			3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
+// 			FColor::Green, // DisplayColor: 텍스트 색상
+// 			TEXT("Pressed E Button, Grap Physics Object") // DebugMessage: 출력할 문자열
+// 		);
+// 	}
+// 	
+// 	//캐릭터 쪽에 physicshandle 관련 함수 만들기...여기가 캐릭터구나
+// 	
+// }
 

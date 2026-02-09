@@ -111,6 +111,7 @@ public:
 	
 	void InputShootOrangePT();
 	
+	UFUNCTION(BlueprintNativeEvent, Category = "InputMappingFucntion")
 	void InputGrabPhysicsObject();
 	
 };
