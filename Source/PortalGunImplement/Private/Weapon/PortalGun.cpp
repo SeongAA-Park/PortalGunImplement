@@ -185,7 +185,6 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 					);
 				}
 			}
-
 			// 시각적 피드백: 총구 소켓 위치 가져오기
 			FVector MuzzleLoc = FirstPersonMesh->GetSocketLocation(MuzzleSocketName);
 			// 발사 방향에 따른 디버그 라인 (파랑/주황 구분)

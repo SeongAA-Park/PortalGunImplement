@@ -43,6 +43,11 @@ public:
 	//(beginplay로부터 전역변수화) PortalCamera에 지정해줄 Material - 런타임에 파라미터만 바꿔 머터리얼 변경 가능
 	UPROPERTY(Transient, VisibleInstanceOnly, Category="Portal")
 	TObjectPtr<class UMaterialInstanceDynamic> PortalMID;
+	
+	//02.09 렌더링로직 수정중 - 추가
+	// 원본 머티리얼 (NewCP_Material) - 블루프린트에서 Create Dynamic Material Instance의 Parent에 매터리얼을 넣은것과 같이 필요
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
+	TObjectPtr<class UMaterialInterface> NewCP_Material;
 
 	
 	//3.포탈 종류 구분
@@ -62,6 +67,8 @@ protected:
 	void UpdatePortalView();
 	
 	void UpdatePortalView2(); //포탈 예제를 기반으로 작성해본 코드
+	
+	void UpdatePortalView3(); //02.09 새로작성
 	
 	// 오버랩 이벤트 함수 (반드시 UFUNCTION이어야 합니다)
 	UFUNCTION()
