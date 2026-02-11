@@ -89,6 +89,7 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
         
 		// 벽의 Normal 방향을 포탈의 앞방향(X축)으로 설정하여 벽에 평평하게 붙임
 		//FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromX(PlayerHitResult.ImpactNormal);
+		// 그냥 이거 사용해도 될 것 같은데...
 		
 		// 수정 : 기존의 SpawnRotation 계산에서는 Roll이 불안정했을 수 있음
 		const FVector N = PlayerHitResult.ImpactNormal.GetSafeNormal();
@@ -147,17 +148,6 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
             
 				// 3. 생성된 포탈에 벽 정보 전달
 				NewPortal->SetAttachedWall(SurfaceActor);
-				
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(
-						-1,                      // Key: -1이면 새 메시지 추가, 특정 숫자면 해당 메시지 갱신
-						3.f,                     // TimeToDisplay: 메시지가 떠 있을 시간 (초)
-						FColor::Cyan,            // DisplayColor: 텍스트 색상
-						TEXT("Portalable Wall Weakptr is Saved On CustomPortal")     // DebugMessage: 출력할 내용
-					);
-				}
-				
 			}
 			
 			//새 포탈 생성 시 자신이 붙는 Wallptr : weakptr로 저장
@@ -175,15 +165,15 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 				OrangePortal->LinkedPortal = BluePortal;
 				
 				// 화면에 성공 메시지 출력
-				if (GEngine)
-				{
-					GEngine->AddOnScreenDebugMessage(
-						-1,                 // Key: -1은 메시지를 덮어쓰지 않고 계속 새로 출력
-						5.0f,               // TimeToDisplay: 5초 동안 표시
-						FColor::Green,       // DisplayColor: 연결 성공을 알리는 청록색
-						TEXT("Portals Linked Successfully!") // DebugMessage
-					);
-				}
+				// if (GEngine)
+				// {
+				// 	GEngine->AddOnScreenDebugMessage(
+				// 		-1,                 // Key: -1은 메시지를 덮어쓰지 않고 계속 새로 출력
+				// 		5.0f,               // TimeToDisplay: 5초 동안 표시
+				// 		FColor::Green,       // DisplayColor: 연결 성공을 알리는 청록색
+				// 		TEXT("Portals Linked Successfully!") // DebugMessage
+				// 	);
+				// }
 			}
 			// 시각적 피드백: 총구 소켓 위치 가져오기
 			FVector MuzzleLoc = FirstPersonMesh->GetSocketLocation(MuzzleSocketName);
@@ -195,19 +185,6 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		// 7. AI 인지 시스템에 소음 전달 (ArenaShooter 이식)
 		MakeNoise(ShotLoudness, PortalHoldingPlayer, GetActorLocation(), ShotNoiseRange);
 	}
-    //}
-	// else
-	// {
-	// 	if (GEngine)
-	// 	{
-	// 		GEngine->AddOnScreenDebugMessage(
-	// 		-1,          // Key: 동일한 로그를 덮어쓸지 여부 (-1은 매번 새로 출력)
-	// 		3.f,         // TimeToDisplay: 화면에 표시될 시간 (초)
-	// 		FColor::Red, // DisplayColor: 텍스트 색상
-	// 		TEXT("Can't make Portal!") // DebugMessage: 출력할 문자열
-	// 		);
-	// 	}
-	// }
 }
 
 const TSubclassOf<UAnimInstance>& APortalGun::GetFirstPersonAnimInstanceClass() const

@@ -64,10 +64,6 @@ protected:
 	TWeakObjectPtr<AActor> AttachedWall;
 	
 protected:
-	void UpdatePortalView();
-	
-	void UpdatePortalView2(); //포탈 예제를 기반으로 작성해본 코드
-	
 	void UpdatePortalView3(); //02.09 새로작성
 	
 	// 오버랩 이벤트 함수 (반드시 UFUNCTION이어야 합니다)
