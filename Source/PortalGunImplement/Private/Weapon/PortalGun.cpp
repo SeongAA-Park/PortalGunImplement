@@ -9,6 +9,7 @@
 #include "SNegativeActionButton.h"
 #include "Camera/CameraComponent.h"
 #include "Interfaces/IPortalable.h"
+#include "Kismet/GameplayStatics.h"
 #include "Runtime/CoreUObject/Tests/UObject/PropertyStateTrackingTest.h"
 
 // Sets default values
@@ -78,11 +79,30 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		return; 
 	}
 	
-	//수정 : 캐릭터의 시선 정중앙의 타겟 정보 가져오기
+	//캐릭터의 시선 정중앙의 타겟 정보 가져오기
 	FHitResult PlayerHitResult = PortalHoldingPlayer->GetWeaponTargetLocation();
 	
 	if (PlayerHitResult.bBlockingHit)
 	{
+		// [추가] 인터페이스를 통해 벽 정보 전달
+		AActor* HitActor = PlayerHitResult.GetActor();
+		
+		// 1. 맞은 액터가 인터페이스를 구현했는지 확인
+		if (!HitActor || !(HitActor->Implements<UIPortalable>()))
+		{
+			if (GEngine)
+			{
+				GEngine->AddOnScreenDebugMessage(
+				-1,                 // Key: -1은 메시지를 덮어쓰지 않고 계속 새로 출력
+				5.0f,               // TimeToDisplay: 5초 동안 표시
+				FColor::Red,       // DisplayColor: 연결 성공을 알리는 청록색
+				TEXT("Can't make portal on this wall!") // DebugMessage
+				);
+			}
+			
+			return;
+		}
+		
 		// 포탈 소환 트랜스폼 계산
 		// 벽면에 겹쳐서 깜빡이는 Z-Fighting을 방지하기 위해 Normal 방향으로 0.1cm 띄움
 		FVector SpawnLocation = PlayerHitResult.ImpactPoint + (PlayerHitResult.ImpactNormal * 0.1f);
@@ -132,28 +152,35 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 		//SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 		// [중요!] 실제 포탈 인스턴스 스폰
-		ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
-        
+		//ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
+		ACustomPortal* NewPortal = GetWorld()->SpawnActorDeferred<ACustomPortal>(
+		PortalClass, FTransform(SpawnRotation, SpawnLocation), this, PortalHoldingPlayer);
+		
 		if (NewPortal)
 		{
+			NewPortal->PortalID = ColorIndex;
+			
 			// [추가] 인터페이스를 통해 벽 정보 전달
-			AActor* HitActor = PlayerHitResult.GetActor();
+			//AActor* HitActor = PlayerHitResult.GetActor();
         
 			// 1. 맞은 액터가 인터페이스를 구현했는지 확인
-			if (HitActor && HitActor->Implements<UIPortalable>())
-			{
+			//if (HitActor && HitActor->Implements<UIPortalable>())
+			//{
 				// 2. 인터페이스 메시지를 호출하여 실제 벽 액터를 가져옴
 				// C++에서 인터페이스 함수를 호출할 때는 Execute_ 접두사를 사용합니다.
 				AActor* SurfaceActor = IIPortalable::Execute_GetPortalSurfaceActor(HitActor);
             
 				// 3. 생성된 포탈에 벽 정보 전달
 				NewPortal->SetAttachedWall(SurfaceActor);
-			}
+			
+				UGameplayStatics::FinishSpawningActor(NewPortal, FTransform(SpawnRotation, SpawnLocation));
+		
+			//}
 			
 			//새 포탈 생성 시 자신이 붙는 Wallptr : weakptr로 저장
 			
-			NewPortal->PortalID = ColorIndex;
             
+			
 			// 관리용 변수에 저장 및 디버그 라인 표시
 			if (ColorIndex == 0) BluePortal = NewPortal;
 			else OrangePortal = NewPortal;

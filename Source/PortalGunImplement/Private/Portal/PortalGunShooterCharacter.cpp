@@ -47,21 +47,21 @@ FHitResult APortalGunShooterCharacter::GetWeaponTargetLocation()
 
 	bool bHit = GetWorld()->LineTraceSingleByChannel(OutHit, Start, End, ECC_Visibility, QueryParams);
 
-	// --- 디버그 라인 추가 시작 ---
-	// 충돌 여부에 따라 선 색상 결정 (성공: 녹색, 실패: 빨간색)
-	FColor LineColor = bHit ? FColor::Green : FColor::Red;
-
-	// 디버그 라인 그리기
-	DrawDebugLine(
-		GetWorld(), 
-		Start, 
-		End, 
-		LineColor, 
-		false,      // bPersistentLines: 영구 표시 여부
-		1.0f,       // LifeTime: 2초 동안 표시
-		0,          // DepthPriority
-		0.05f        // Thickness: 선 두께
-	);
+	// // --- 디버그 라인 추가 시작 ---
+	// // 충돌 여부에 따라 선 색상 결정 (성공: 녹색, 실패: 빨간색)
+	// FColor LineColor = bHit ? FColor::Green : FColor::Red;
+	//
+	// // 디버그 라인 그리기
+	// DrawDebugLine(
+	// 	GetWorld(), 
+	// 	Start, 
+	// 	End, 
+	// 	LineColor, 
+	// 	false,      // bPersistentLines: 영구 표시 여부
+	// 	1.0f,       // LifeTime: 2초 동안 표시
+	// 	0,          // DepthPriority
+	// 	0.05f        // Thickness: 선 두께
+	// );
 
 	// 충돌했을 경우 충돌 지점에 작은 구체 표시
 	if (bHit)

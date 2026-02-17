@@ -81,6 +81,8 @@ void ACustomPortal::BeginPlay()
 		//이를 바탕으로 PortalMID 변수 채우기
 		PortalMID = UMaterialInstanceDynamic::Create(NewCP_Material, this);
 		PortalMesh->SetMaterial(0,PortalMID);
+		
+		ApplyPortalVisuals();
 	}
 	
 	int32 ViewportX = 0;
@@ -174,7 +176,19 @@ void ACustomPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 1. 유효성 검사 (AttachedWall이 있는지 먼저 확인)
-	if (!OtherActor || !AttachedWall.IsValid()) return;
+	if ( !AttachedWall.IsValid()) //!OtherActor ||
+	{
+		if (GEngine)
+		{
+			GEngine->AddOnScreenDebugMessage(
+				-1,                      // Key: -1이면 새 메시지 추가, 특정 숫자면 해당 메시지 갱신
+				3.f,                     // TimeToDisplay: 메시지가 떠 있을 시간 (초)
+				FColor::Red,            // DisplayColor: 텍스트 색상
+				TEXT("There is no attatchedWall")     // DebugMessage: 출력할 내용
+			);
+		}
+		return;
+	}
 
 	// 2. 통과 대상인지 확인 (태그 또는 플레이어)
 	bool bHasTag = OtherActor->ActorHasTag(FName("PortalPassable"));
@@ -260,6 +274,36 @@ void ACustomPortal::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Ot
 			WallRoot->IgnoreActorWhenMoving(OtherActor, false);
 		}
 	}
+}
+
+void ACustomPortal::ApplyPortalVisuals()
+{
+	// MID가 아직 없으면 만들어 둠 (안전장치)
+	if (!PortalMID && PortalMesh && NewCP_Material)
+	{
+		PortalMID = UMaterialInstanceDynamic::Create(NewCP_Material, this);
+		PortalMesh->SetMaterial(0, PortalMID);
+	}
+
+	if (!PortalMID) return;
+
+	// PortalID에 따른 링 컬러 결정
+	FLinearColor RingColor;
+	switch (PortalID)
+	{
+	case 0: // Blue
+		RingColor = FLinearColor(0.0f, 0.0323f, 1.72f, 1.0f);
+		break;
+	case 1: // Orange
+		RingColor = FLinearColor(0.871,0.172,0.005, 1.0f);
+		break;
+	default:
+		RingColor = FLinearColor::White;
+		break;
+	
+	}
+	
+	PortalMID->SetVectorParameterValue(TEXT("PTRingColor"), RingColor);
 }
 
 

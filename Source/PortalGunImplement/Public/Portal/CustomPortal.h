@@ -48,7 +48,6 @@ public:
 	// 원본 머티리얼 (NewCP_Material) - 블루프린트에서 Create Dynamic Material Instance의 Parent에 매터리얼을 넣은것과 같이 필요
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Portal")
 	TObjectPtr<class UMaterialInterface> NewCP_Material;
-
 	
 	//3.포탈 종류 구분
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Portal")
@@ -76,4 +75,7 @@ protected:
 public:
 	// 벽 정보를 설정하기 위한 public 함수
 	void SetAttachedWall(AActor* InWall) { AttachedWall = InWall; }
+	
+	UFUNCTION(BlueprintCallable, Category="Portal|Visual")
+	void ApplyPortalVisuals();
 };
