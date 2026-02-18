@@ -170,6 +170,16 @@ void ACustomPortal::UpdatePortalView3()
 	//DrawDebugCamera(GetWorld(), FinalTransform.GetLocation(), FinalTransform.Rotator(), PortalCamera->FOVAngle, 1.0f, FColor::Red, false, 0.1f);
 	
 	// ClipPlane 설정
+	PortalCamera->bEnableClipPlane = true;
+	
+	
+	const FVector PlaneBase = LinkedPortal->PortalMesh ? LinkedPortal->PortalMesh->GetComponentLocation() : LinkedPortal->GetActorLocation();
+	const FVector PlaneNormal = LinkedPortal->GetActorForwardVector(); // +X 방향
+	
+	const float Bias = 1.0f; // 0.1~2.0cm 정도 실험
+	PortalCamera->ClipPlaneBase = PlaneBase + PlaneNormal * Bias;
+	PortalCamera->ClipPlaneNormal = PlaneNormal;
+	
 }
 
 void ACustomPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
