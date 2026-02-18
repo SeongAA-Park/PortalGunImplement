@@ -2,6 +2,8 @@
 
 
 #include "Chamber00/Chamber00PortalManager.h"
+
+#include "Chamber00/Cb00_InternalDoor.h"
 #include "Components/BoxComponent.h"
 #include "Portal/CustomPortal.h"
 
@@ -122,6 +124,50 @@ void AChamber00PortalManager::DestroyPortalSafe(TObjectPtr<ACustomPortal>& Porta
 	PortalPtr = nullptr;
 }
 
+void AChamber00PortalManager::OnWorldManagedDoorCloseTriggerBeginOverlap(UPrimitiveComponent* OverlappedComp,
+	AActor* OtherActor, UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep,
+	const FHitResult& SweepResult)
+{
+	// 한번만 반응
+	if (bWorldDoorCloseTriggered)
+	{
+		return;
+	}
+	
+	// Pawn만 반응
+	if (OtherActor && OtherActor->IsA<APawn>())
+	{
+		bWorldDoorCloseTriggered = true;
+
+		if (Cb00ManagedDoor)
+		{
+			Cb00ManagedDoor->DoorClose();
+			UE_LOG(LogTemp, Log, TEXT("[Chamber00PortalManager] WorldManagedDoorCloseTrigger fired -> DoorClose"));
+		}
+		else
+		{
+			UE_LOG(LogTemp, Warning, TEXT("[Chamber00PortalManager] Cb00ManagedDoor is null."));
+		}
+
+		// 이후로는 절대 반응하지 않게 트리거 비활성화
+		if (WorldManagedDoorCloseTrigger)
+		{
+			WorldManagedDoorCloseTrigger->SetGenerateOverlapEvents(false);
+			WorldManagedDoorCloseTrigger->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		}
+	}
+}
+
+void AChamber00PortalManager::OpenManagedDoorDelayed()
+{
+	UE_LOG(LogTemp, Warning, TEXT("OpenManagedDoorDelayed called. Door=%s"), *GetNameSafe(Cb00ManagedDoor));
+
+	if (Cb00ManagedDoor)
+	{
+		Cb00ManagedDoor->DoorOpen();
+	}
+}
+
 // Sets default values
 AChamber00PortalManager::AChamber00PortalManager()
 {
@@ -137,15 +183,27 @@ AChamber00PortalManager::AChamber00PortalManager()
 	OrangeSpawnPoint = CreateDefaultSubobject<USceneComponent>(TEXT("OrangeSpawnPoint"));
 	OrangeSpawnPoint->SetupAttachment(Root);
 
+	// ElevatorCleanup 트리거 기본 세팅(필요시 BP에서 크기/위치 조정)
+	
 	ElevatorCleanupTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("ElevatorCleanupTrigger"));
 	ElevatorCleanupTrigger->SetupAttachment(Root);
-
-	// 트리거 기본 세팅(필요시 BP에서 크기/위치 조정)
+	
 	ElevatorCleanupTrigger->SetBoxExtent(FVector(120.f, 120.f, 200.f));
 	ElevatorCleanupTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
 	ElevatorCleanupTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
 	ElevatorCleanupTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 	ElevatorCleanupTrigger->SetGenerateOverlapEvents(true);
+	
+	// WorldManagedDoorClose 트리거 기본 세팅
+	WorldManagedDoorCloseTrigger = CreateDefaultSubobject<UBoxComponent>(TEXT("WorldManagedDoorCloseTrigger"));
+	WorldManagedDoorCloseTrigger->SetupAttachment(Root);
+
+	// 기본 세팅: Pawn만 감지
+	WorldManagedDoorCloseTrigger->SetBoxExtent(FVector(120.f, 120.f, 200.f));
+	WorldManagedDoorCloseTrigger->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	WorldManagedDoorCloseTrigger->SetCollisionResponseToAllChannels(ECR_Ignore);
+	WorldManagedDoorCloseTrigger->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
+	WorldManagedDoorCloseTrigger->SetGenerateOverlapEvents(true);
 }
 
 // Called when the game starts or when spawned
@@ -153,14 +211,27 @@ void AChamber00PortalManager::BeginPlay()
 {
 	Super::BeginPlay();
 	
-	// Cleanup trigger 바인딩
+	// Elevator Cleanup trigger 바인딩
 	if (ensure(ElevatorCleanupTrigger))
 	{
 		ElevatorCleanupTrigger->OnComponentBeginOverlap.AddDynamic(
 			this, &AChamber00PortalManager::OnCleanupTriggerBeginOverlap
 		);
 	}
+	
+	//WorldManagedDoorCloseTrigger 바인딩
+	if (ensure(WorldManagedDoorCloseTrigger))
+	{
+		WorldManagedDoorCloseTrigger->OnComponentBeginOverlap.AddDynamic(
+			this, &AChamber00PortalManager::OnWorldManagedDoorCloseTriggerBeginOverlap
+		);
+	}
+	
+	//Cb00ManagedDoor->DoorOpen();
 
+	// 가드 초기화
+	bWorldDoorCloseTriggered = false;
+	
 	// 지연 스폰 예약
 	if (PortalSpawnDelay <= 0.0f)
 	{
@@ -176,6 +247,18 @@ void AChamber00PortalManager::BeginPlay()
 			false
 		);
 	}
+	
+	FTimerHandle Temp;
+	GetWorldTimerManager().SetTimer(
+		Temp,
+		this,
+		&AChamber00PortalManager::OpenManagedDoorDelayed,
+		5.0f,
+		false
+	);
+	
+	
+	UE_LOG(LogTemp, Warning, TEXT("Manager door ref: %s"), *GetNameSafe(Cb00ManagedDoor));
 	
 }
 

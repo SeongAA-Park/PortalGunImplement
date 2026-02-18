@@ -9,6 +9,8 @@
 class ACustomPortal;
 class UBoxComponent;
 class USceneComponent;
+class ACb00_InternalDoor;
+
 
 UCLASS()
 class PORTALGUNIMPLEMENT_API AChamber00PortalManager : public AActor
@@ -64,7 +66,7 @@ protected:
 	UFUNCTION()
 	void RemovePortalPair();
 
-	/** 트리거 Overlap 콜백 */
+	/** 트리거 Overlap 콜백 - 엘리베이터 앞 포탈 제거 collisionbox */
 	UFUNCTION()
 	void OnCleanupTriggerBeginOverlap(
 		UPrimitiveComponent* OverlappedComp,
@@ -78,6 +80,34 @@ protected:
 	/** 내부 유틸 */
 	bool IsPortalPairSpawned() const;
 	void DestroyPortalSafe(TObjectPtr<ACustomPortal>& PortalPtr);
+	
+public:
+	//버튼에 연결되어 있지 않고, 월드 수준으로 관리되는 Door 존재 - 월드에 스폰되어 있는 인스턴스 참조하기
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chamber00|InternalDoor")
+	TObjectPtr<ACb00_InternalDoor> Cb00ManagedDoor;
+	
+	/** ====== World Managed Door Close Trigger ====== */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category="Chamber00|InternalDoor", meta=(AllowPrivateAccess="true"))
+	TObjectPtr<UBoxComponent> WorldManagedDoorCloseTrigger;
+	
+	/** 한번만 반응하도록 가드 */
+	bool bWorldDoorCloseTriggered = false;
+	
+	/** 트리거 Overlap 콜백 - 매니저에서 관리하는 문 닫힘용 collisionbox */
+	UFUNCTION()
+	void OnWorldManagedDoorCloseTriggerBeginOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult
+	);
+	
+private:
+	UFUNCTION()
+	void OpenManagedDoorDelayed();
+	
 public:	
 	// Sets default values for this actor's properties
 	AChamber00PortalManager();
