@@ -8,6 +8,7 @@
 #include "DrawDebugHelpers.h"
 #include "SNegativeActionButton.h"
 #include "Camera/CameraComponent.h"
+#include "Components/SphereComponent.h"
 #include "Interfaces/IPortalable.h"
 #include "Kismet/GameplayStatics.h"
 #include "Runtime/CoreUObject/Tests/UObject/PropertyStateTrackingTest.h"
@@ -40,12 +41,26 @@ APortalGun::APortalGun()
 	ThirdPersonMesh->SetCollisionProfileName(FName("NoCollision"));
 	ThirdPersonMesh->SetFirstPersonPrimitiveType(EFirstPersonPrimitiveType::WorldSpaceRepresentation);
 	ThirdPersonMesh->bOwnerNoSee = true;   // 소유자에게는 보이지 않음 (1인칭과 겹침 방지)
+	
+	// PickUpSphere 설정
+	PickupSphere = CreateDefaultSubobject<USphereComponent>(TEXT("PickupSphere"));
+	PickupSphere->SetupAttachment(RootComponent);
+	PickupSphere->SetSphereRadius(150.f);
+
+	PickupSphere->SetCollisionEnabled(ECollisionEnabled::QueryOnly);
+	PickupSphere->SetCollisionResponseToAllChannels(ECR_Ignore);
+	PickupSphere->SetCollisionResponseToChannel(ECC_Pawn, ECR_Overlap);
 }
 
 // Called when the game starts or when spawned
 void APortalGun::BeginPlay()
 {
 	Super::BeginPlay();
+	
+	if (PickupSphere)
+	{
+		PickupSphere->OnComponentBeginOverlap.AddDynamic(this, &APortalGun::OnPickupBeginOverlap);
+	}
 
 	if (AActor* MyOwner = GetOwner())
 	{
@@ -67,6 +82,16 @@ void APortalGun::BeginPlay()
 
 void APortalGun::HandlePortalShot(int32 PortalColorIndex)
 {
+	// HandlePortalShot() 또는 ExecutePortalTrace() 시작에서 Owner로부터 캐싱을 “지연 초기화”하세요.
+	
+	if (!PortalHoldingPlayer)
+	{
+		PortalHoldingPlayer = Cast<APortalGunShooterCharacter>(GetOwner());
+	}
+	
+	//월드 배치 → 픽업 시 Owner 세팅 → 첫 발사 시점에 PortalHoldingPlayer가 확보됨
+	//별도의 Setter 함수 추가 없이도 안정적으로 동작
+	
 	// 캐릭터의 조준 함수를 기반으로 실제 포탈 배치 수행
 	ExecutePortalTrace(PortalColorIndex);
 }
@@ -222,6 +247,42 @@ const TSubclassOf<UAnimInstance>& APortalGun::GetFirstPersonAnimInstanceClass() 
 const TSubclassOf<UAnimInstance>& APortalGun::GetThirdPersonAnimInstanceClass() const
 {
 	return ThirdPersonAnimInstanceClass;
+}
+
+void APortalGun::OnPickedUpBy(APortalGunShooterCharacter* NewOwner)
+{
+	if (!IsValid(NewOwner)) return;
+
+	// Owner / 캐싱
+	SetOwner(NewOwner);
+	PortalHoldingPlayer = NewOwner;
+
+	// 월드에서 더 이상 주울 수 없게
+	if (PickupSphere)
+	{
+		PickupSphere->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+		PickupSphere->SetGenerateOverlapEvents(false);
+	}
+
+	// 월드에 놓인 “무기 외형” 처리를 어떻게 할지 선택:
+	// 지금 구조상 FirstPersonMesh/ThirdPersonMesh가 이미 있으니,
+	// 무기 액터 자체는 캐릭터에 붙어 이동하게 됩니다.
+	// 그래서 별도 월드 메시 숨김이 필요 없을 수도 있습니다.
+	// 하지만 혹시 "월드에 남아있는 것처럼 보인다"면 아래처럼 처리:
+	// SetActorEnableCollision(false); // 필요시
+	
+	// 3. 더 이상 월드에서 충돌하지 않게
+	SetActorEnableCollision(false);
+	
+}
+
+void APortalGun::OnPickupBeginOverlap(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+                                      UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
+{
+	APortalGunShooterCharacter* Character = Cast<APortalGunShooterCharacter>(OtherActor); 
+	if (!Character) return; // Character에게 "이 픽업을 처리"하게 위임 
+	// (장착 or 업그레이드) 
+	Character->TryPickupPortalGun(this);
 }
 
 // Called every frame

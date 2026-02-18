@@ -87,39 +87,43 @@ void APortalGunShooterCharacter::BeginPlay()
 	Super::BeginPlay();
 	
 	// 1. 스폰할 클래스(틀)가 에디터에서 잘 설정되었는지 확인
-	if (DefaultPortalGunClass)
-	{
-		// 2. 액터 스폰 설정 (주인과 가해자 설정)
-		FActorSpawnParameters SpawnParams;
-		SpawnParams.Owner = this;
-		SpawnParams.Instigator = this;
-		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
-
-		// 3. 월드에 포탈건 생성
-		// 위치는 캐릭터의 현재 위치로 잡고, 생성 후 바로 부착할 것이므로 회전은 기본값(Zero)으로 충분합니다.
-		CurrentWeapon = GetWorld()->SpawnActor<APortalGun>(DefaultPortalGunClass, GetActorTransform(), SpawnParams);
-
-		if (CurrentWeapon)
-		{
-			// 4. 캐릭터의 손 소켓에 무기 메시 부착
-			// ShooterCharacter에서 구현했던 부착 함수를 호출합니다.
-			AttachWeaponMeshes(CurrentWeapon);
-
-			// 5. 애니메이션 및 UI 활성화
-			// ShooterCharacter에 정의된 활성화 로직을 호출하여 팔의 포즈를 바꿉니다.
-			OnPortalGunActivated(CurrentWeapon);
-
-			// 6. 포탈 발사 권한 초기화
-			bHasBlueGun = true;
-			bHasOrangeGun = true;
-            
-			UE_LOG(LogTemp, Log, TEXT("Portal Gun successfully spawned and equipped."));
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("DefaultPortalGunClass is NOT assigned in Blueprint!"));
-	}
+	// if (DefaultPortalGunClass)
+	// {
+	// 	// 2. 액터 스폰 설정 (주인과 가해자 설정)
+	// 	FActorSpawnParameters SpawnParams;
+	// 	SpawnParams.Owner = this;
+	// 	SpawnParams.Instigator = this;
+	// 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+	//
+	// 	// 3. 월드에 포탈건 생성
+	// 	// 위치는 캐릭터의 현재 위치로 잡고, 생성 후 바로 부착할 것이므로 회전은 기본값(Zero)으로 충분합니다.
+	// 	CurrentWeapon = GetWorld()->SpawnActor<APortalGun>(DefaultPortalGunClass, GetActorTransform(), SpawnParams);
+	//
+	// 	if (CurrentWeapon)
+	// 	{
+	// 		// 4. 캐릭터의 손 소켓에 무기 메시 부착
+	// 		// ShooterCharacter에서 구현했던 부착 함수를 호출합니다.
+	// 		AttachWeaponMeshes(CurrentWeapon);
+	//
+	// 		// 5. 애니메이션 및 UI 활성화
+	// 		// ShooterCharacter에 정의된 활성화 로직을 호출하여 팔의 포즈를 바꿉니다.
+	// 		OnPortalGunActivated(CurrentWeapon);
+	//
+	// 		// 6. 포탈 발사 권한 초기화
+	// 		bHasBlueGun = true;
+	// 		bHasOrangeGun = true;
+ //            
+	// 		UE_LOG(LogTemp, Log, TEXT("Portal Gun successfully spawned and equipped."));
+	// 	}
+	// }
+	// else
+	// {
+	// 	UE_LOG(LogTemp, Error, TEXT("DefaultPortalGunClass is NOT assigned in Blueprint!"));
+	// }
+	
+	// 이제 무기는 레벨에서 주워야 하므로 여기서 스폰/장착하지 않음
+	bHasBlueGun = false;
+	bHasOrangeGun = false;
 	
 }
 
@@ -194,6 +198,63 @@ void APortalGunShooterCharacter::InputShootOrangePT()
 		CurrentWeapon->HandlePortalShot(1);
 	}
 }
+
+void APortalGunShooterCharacter::TryPickupPortalGun(APortalGun* PickupGun)
+{
+	if (!IsValid(PickupGun)) return;
+
+	// 1) 파란 총 픽업: 무기가 없을 때만 장착 + 애니/부착
+	if (PickupGun->PickupType == EPortalGunPickupType::Blue)
+	{
+		if (IsValid(CurrentWeapon))
+		{
+			// 이미 무기 있으면 파란 총은 무시(정책)
+			return;
+		}
+
+		CurrentWeapon = PickupGun;
+
+		// PortalGun은 ExecutePortalTrace에서 PortalHoldingPlayer 필요
+		PickupGun->SetOwner(this);
+		// PortalHoldingPlayer는 PortalGun 내부 protected라 직접 못 건드림 → 대신 BeginPlay 캐싱에 의존하면 늦음
+		// 그래서 가장 안전하게 PortalGun에 "SetHoldingPlayer" 함수를 추가하는게 좋음.
+		// 여기서는 최소 수정으로: PortalGun BeginPlay 캐싱 말고, HandlePortalShot 시작에서 Owner 캐싱하도록 보완(아래 4번)
+
+		AttachWeaponMeshes(CurrentWeapon);
+		OnPortalGunActivated(CurrentWeapon);
+
+		bHasBlueGun = true;
+		bHasOrangeGun = false; // 기본은 false 유지
+
+		// 월드 픽업 상태 정리(더이상 겹치지 않게)
+		PickupGun->OnPickedUpBy(this);
+		return;
+	}
+
+	// 2) 오렌지 업그레이드 픽업:
+	//    무기 상태 유지(장착/애니 변화 없음) + 기능만 추가 + 월드 총은 사라짐
+	if (PickupGun->PickupType == EPortalGunPickupType::OrangeUpgrade)
+	{
+		// 파란 총을 먼저 먹는 흐름이라면 무기 없을 때는 무시
+		if (!IsValid(CurrentWeapon))
+		{
+			return;
+		}
+
+		// 이미 오렌지 권한이 있으면 중복 픽업 무시
+		if (bHasOrangeGun)
+		{
+			return;
+		}
+
+		bHasOrangeGun = true;
+
+		// 월드에 있던 오렌지 총은 소모 → 사라짐
+		PickupGun->Destroy();
+		return;
+	}
+}
+
 
 void APortalGunShooterCharacter::InputGrabPhysicsObject_Implementation()
 {

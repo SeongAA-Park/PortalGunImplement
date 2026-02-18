@@ -114,4 +114,10 @@ public:
 	UFUNCTION(BlueprintNativeEvent, Category = "InputMappingFucntion")
 	void InputGrabPhysicsObject();
 	
+public:
+	UFUNCTION(BlueprintCallable, Category="Portal|Weapon")
+	void TryPickupPortalGun(APortalGun* PickupGun);
+	
+	UFUNCTION(BlueprintCallable, Category="Portal|Weapon")
+	bool HasPortalGun() const { return CurrentWeapon != nullptr; }
 };

@@ -8,6 +8,14 @@
 
 class ACustomPortal;
 class APortalGunShooterCharacter;
+class USphereComponent;
+
+UENUM(BlueprintType)
+enum class EPortalGunPickupType : uint8
+{
+	Blue UMETA(DisplayName="Blue Gun"),
+	OrangeUpgrade UMETA(DisplayName="Orange Upgrade"),
+};
 
 UCLASS()
 class PORTALGUNIMPLEMENT_API APortalGun : public AActor
@@ -96,5 +104,26 @@ public:
 	const TSubclassOf<UAnimInstance>& GetThirdPersonAnimInstanceClass() const;
 	// Called every frame
 	//virtual void Tick(float DeltaTime) override;
+	
+public:
+	// 이 총이 월드에서 무엇을 주는 픽업인지
+	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Pickup")
+	EPortalGunPickupType PickupType = EPortalGunPickupType::Blue;
+	
+	UPROPERTY(VisibleAnywhere, Category="Pickup")
+	TObjectPtr<class USphereComponent> PickupSphere;
+	
+	UFUNCTION(BlueprintCallable, Category="Pickup")
+	void OnPickedUpBy(APortalGunShooterCharacter* NewOwner);
+
+protected:
+	UFUNCTION()
+	void OnPickupBeginOverlap(
+		UPrimitiveComponent* OverlappedComp,
+		AActor* OtherActor,
+		UPrimitiveComponent* OtherComp,
+		int32 OtherBodyIndex,
+		bool bFromSweep,
+		const FHitResult& SweepResult);
 
 };
