@@ -26,32 +26,11 @@ Valve의 《Portal》에서 제공하는 핵심 플레이 기능을 Unreal Engin
 
 `APortalGunShooterCharacter`는 Enhanced Input으로 파란색·주황색 포탈 발사 입력을 처리합니다. 발사 입력은 포탈건의 `HandlePortalShot()`과 `ExecutePortalTrace()`로 이어지며, 캐릭터의 `GetWeaponTargetLocation()`에서 수행한 `LineTraceSingleByChannel()`의 충돌 결과를 사용합니다.
 
-포탈 설치 과정은 다음과 같습니다.
-
-1. 플레이어의 조준 방향으로 트레이스하여 `FHitResult`를 얻습니다.
-2. 충돌한 액터가 `UIPortalable` 인터페이스를 구현했는지 확인합니다.
-3. 충돌 지점과 표면 법선으로 포탈의 위치와 회전을 계산합니다.
-4. 같은 색상의 기존 포탈이 있으면 제거하고 새 포탈을 생성합니다.
-5. `PortalID`와 포탈이 부착된 벽 정보를 설정합니다.
-6. 두 색상 포탈이 모두 존재하면 서로의 `LinkedPortal`을 연결합니다.
-
-설치 가능 여부를 인터페이스로 구분하고, `IIPortalable::Execute_GetPortalSurfaceActor()`로 실제 표면 액터를 가져옵니다. 따라서 포탈건이 특정 벽 클래스에 직접 의존하지 않고 설치 대상과 상호작용할 수 있습니다.
-
 ### 표면 방향에 맞는 회전 계산
 
 생성 위치는 `ImpactPoint + ImpactNormal * 0.1f`로 계산합니다. 표면 법선 방향으로 조금 띄워 포탈 면과 벽이 겹칠 때 발생하는 Z-fighting을 줄이려는 처리입니다.
 
 회전은 표면 법선을 포탈의 전방인 X축으로 삼고, 포탈의 위쪽인 Z축을 별도로 계산한 뒤 `UKismetMathLibrary::MakeRotFromXZ()`로 구성합니다.
-
-```cpp
-// N: 정규화한 표면 법선, UpCandidate: 위쪽 방향 후보
-FVector Z = (UpCandidate - FVector::DotProduct(UpCandidate, N) * N).GetSafeNormal();
-const FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromXZ(N, Z);
-```
-
-기본 위쪽 후보는 월드 Up 벡터입니다. 바닥·천장처럼 법선과 월드 Up이 거의 평행한 경우에는 카메라 Forward 벡터를 사용합니다. 투영 결과가 영벡터에 가까우면 카메라 Right 벡터로 다시 계산합니다. 이를 통해 벽뿐 아니라 바닥과 천장에서도 포탈의 방향을 구성하고, 법선만으로 회전을 정할 때 생길 수 있는 Roll의 불안정성을 보완합니다.
-
-포탈은 `SpawnActorDeferred<ACustomPortal>()`로 생성하고, 식별자와 부착 벽을 지정한 뒤 `FinishSpawningActor()`로 생성을 마칩니다. 초기화에 필요한 데이터를 생성 완료 전에 전달하는 구조입니다.
 
 ## 2. 플레이어 시점을 반영한 실시간 포탈 렌더링
 
@@ -69,8 +48,6 @@ const FRotator SpawnRotation = UKismetMathLibrary::MakeRotFromXZ(N, Z);
 | `UBoxComponent` | 접근한 액터 감지 및 부착 벽 충돌 처리 |
 
 포탈 메시의 외형 회전은 루트와 분리했습니다. 따라서 메시의 방향 보정이 포탈 좌표계의 기준이나 카메라 변환 계산에 영향을 주지 않도록 구성했습니다.
-
-`BeginPlay()`에서 뷰포트 크기를 기준으로 `RTF_RGBA16f` 렌더 타깃을 생성하고 Scene Capture의 `TextureTarget`에 연결합니다. 같은 렌더 타깃을 동적 머티리얼의 `PotTex` 파라미터에 전달하여 포탈 표면에 촬영 결과를 표시합니다. 테두리 색상은 `PortalID`에 따라 `PTRingColor` 파라미터로 설정합니다.
 
 ### Transform과 Quaternion을 이용한 시점 변환
 
@@ -96,17 +73,9 @@ FTransform FinalTransform = RotatedRelative * LinkedPortal->GetActorTransform();
 PortalCamera->SetWorldTransform(FinalTransform);
 ```
 
-180도 회전은 입구를 바라보는 시점을 출구 너머를 바라보는 시점으로 대응시키기 위한 처리입니다. 코드의 일부 변수명에는 `Mirrored`가 사용되지만, 수학적으로 적용하는 연산은 거울 반사가 아니라 회전입니다. 위치는 `RotateVector()`로 회전시키고, 자세는 쿼터니언 곱으로 합성합니다.
-
-이 좌표 변환 덕분에 플레이어가 포탈 앞에서 좌우로 움직이거나 시선을 돌리면 포탈에 표시되는 반대편 공간도 그에 맞게 달라집니다. 현재 포탈이 소유한 Scene Capture를 반대편 공간으로 이동시켜 촬영하고, 그 결과를 현재 포탈의 표면에 표시하는 방식입니다.
-
 ### 갱신 시점과 클리핑
 
 포탈은 `TG_PostUpdateWork` Tick 그룹을 사용하며, `LinkedPortal`이 있을 때 매 프레임 시점 변환을 갱신합니다. Scene Capture에는 `bCaptureEveryFrame`과 `bCaptureOnMovement`가 활성화되어 있습니다.
-
-또한 연결된 포탈의 위치와 전방 벡터로 클립 평면을 설정합니다. 출구 포탈 면을 기준으로 불필요한 앞쪽 공간이 촬영되는 것을 줄이기 위한 처리이며, 법선 방향으로 1cm의 Bias를 적용합니다. 프로젝트 설정에도 `r.AllowGlobalClipPlane=True`가 지정되어 있습니다.
-
-현재 코드에서 화면 가시성에 따른 갱신 제한은 주석 상태이고, 렌더 타깃 해상도 배율은 `1.0`입니다. 따라서 가시성 기반 렌더링 최적화나 저해상도 캡처가 적용된 상태로 설명하지 않습니다.
 
 ## 3. 포탈 접근 시 텔레포트
 
@@ -124,9 +93,7 @@ C++의 `ACustomPortal`에는 접근 감지와 부착 벽의 충돌 처리가 구
 
 포탈 이동 전후에 플레이어의 속도를 보존하는 기능을 블루프린트로 구현했습니다. 이동 중 포탈에 진입했을 때 출구에서도 이동이 이어지도록 하여, 위치 이동과 함께 운동의 연속성을 표현하는 기능입니다.
 
-이 기능은 텔레포트 로직과 함께 C++로 이전할 예정입니다. 현재 블루프린트에서 사용하는 속도 저장·적용 노드와 방향 보정 방식은 이 문서에서 특정하지 않습니다.
-
-이전 시에는 위치 변환과 속도 벡터 변환을 구분해야 합니다. 속도는 위치 오프셋이 없는 벡터이므로, 입구 기준의 역회전, 포탈 통과에 필요한 180도 회전, 출구 회전을 적용하는 방식으로 방향을 변환할 수 있습니다. 회전만 적용하면 벡터의 크기를 유지할 수 있습니다. 이는 C++ 이전을 위한 설계 방향이며, 현재 블루프린트의 구현식을 확인한 내용은 아닙니다.
+이 기능은 텔레포트 로직과 함께 C++로 이전할 예정입니다.
 
 ## 구현을 통해 다룬 기술
 
