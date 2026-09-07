@@ -75,3 +75,6 @@ DerivedDataCache/*
 
 # IDE specific folders
 .idea/
+
+# Local-only documents and files
+/.local/
