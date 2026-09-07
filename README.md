@@ -1,5 +1,5 @@
 # PortalGunImplement — 프로젝트 기술 소개
-<img width="100%" alt="image" src="https://github.com/user-attachments/assets/dec2ac55-c471-486f-9ece-eb3714052381" />
+<img width="496" height="321" alt="인게임 사진 1" src="https://github.com/user-attachments/assets/f92fa2ab-b4f1-478c-8f27-ffed52b2f75a" />
 
 ## 프로젝트 개요
 
