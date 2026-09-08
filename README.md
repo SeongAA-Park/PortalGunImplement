@@ -1,15 +1,15 @@
-# PortalGunImplement — 프로젝트 기술 소개
+# Project PortalGunImplement 
 <img width="496" height="321" alt="인게임 사진 1" src="https://github.com/user-attachments/assets/f92fa2ab-b4f1-478c-8f27-ffed52b2f75a" />
 
-## 프로젝트 개요
+## 프로젝트 소개
 
-Valve의 《Portal》에서 제공하는 핵심 플레이 기능을 Unreal Engine과 C++, 블루프린트로 재현한 게임 모작 프로젝트입니다. 포탈건으로 두 공간을 연결하고, 플레이어의 위치와 시선에 따라 각 포탈의 반대편 공간을 실시간으로 표시하며, 포탈을 통한 이동과 이동 속도 보존을 구현하는 데 중점을 두었습니다.
-
-단순히 두 지점 사이를 이동하는 기능을 넘어, 서로 다른 방향으로 설치된 포탈 사이에서 위치와 회전을 변환하여 공간이 연결된 것처럼 보이도록 구성했습니다. 이 과정에서 언리얼의 액터·컴포넌트 구조, 충돌 및 트레이스 API, Scene Capture와 머티리얼, `FTransform`과 `FQuat` 등을 활용했습니다.
-
+- 프로젝트명: PortalGunImplement 
+- 프로젝트 정보: 게임 Portal의 핵심 기능인 포탈건 기능 구현 즉 포탈 생성과 텔레포트 등의 기능을 언리얼 API로 구현
 - 엔진: Unreal Engine 5.6 
 - 구현 방식: C++ 및 블루프린트
 - 핵심 범위: 포탈 생성, 실시간 포탈 시점 렌더링, 텔레포트, 텔레포트 시 플레이어 속도 보존
+
+Valve의 《Portal》에서 제공하는 핵심 플레이 기능을 Unreal Engine과 C++, 블루프린트로 재현한 게임 모작 프로젝트입니다. 포탈건으로 두 공간을 연결하고, 플레이어의 위치와 시선에 따라 각 포탈의 반대편 공간을 실시간으로 표시하며, 포탈을 통한 이동과 이동 속도 보존을 구현하는 데 중점을 두었습니다.
 
 ## 주요 기능과 구현 상태
 
@@ -72,10 +72,6 @@ FTransform RotatedRelative(RotatedRotation, RotatedLocation);
 FTransform FinalTransform = RotatedRelative * LinkedPortal->GetActorTransform();
 PortalCamera->SetWorldTransform(FinalTransform);
 ```
-
-### 갱신 시점과 클리핑
-
-포탈은 `TG_PostUpdateWork` Tick 그룹을 사용하며, `LinkedPortal`이 있을 때 매 프레임 시점 변환을 갱신합니다. Scene Capture에는 `bCaptureEveryFrame`과 `bCaptureOnMovement`가 활성화되어 있습니다.
 
 ## 3. 포탈 접근 시 텔레포트
 
