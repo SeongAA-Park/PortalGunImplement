@@ -85,7 +85,7 @@ void UPortalGunComponent::ExecutePortalTrace(int32 ColorIndex)
 		SpawnParams.Instigator = Cast<APawn>(GetOwner());
 		
 		//실제 포탈 소환
-		ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
+		ACustomPortalBase* NewPortal = GetWorld()->SpawnActor<ACustomPortalBase>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
 		if (NewPortal)
 		{
 			NewPortal->PortalID = ColorIndex;  //포탈액터 자체는 파랑/주황 모두 포함... ColorIndex는 설정해줘야함

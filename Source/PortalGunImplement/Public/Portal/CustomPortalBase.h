@@ -4,16 +4,16 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
-#include "CustomPortal.generated.h"
+#include "CustomPortalBase.generated.h"
 
 UCLASS()
-class PORTALGUNIMPLEMENT_API ACustomPortal : public AActor
+class PORTALGUNIMPLEMENT_API ACustomPortalBase : public AActor
 {
 	GENERATED_BODY()
 	
 public:	
 	// Sets default values for this actor's properties
-	ACustomPortal();
+	ACustomPortalBase();
 
 protected:
 	// Called when the game starts or when spawned
@@ -55,7 +55,7 @@ public:
 	
 	//4.연결된 반대편 포탈 참조
 	UPROPERTY(BlueprintReadWrite, Category = "Portal")
-	TObjectPtr<ACustomPortal> LinkedPortal;
+	TObjectPtr<ACustomPortalBase> LinkedPortal;
 	
 protected:
 	// 안정성을 위해 약한 포인터(Weak Pointer)를 사용합니다.

@@ -5,7 +5,7 @@
 
 #include "Chamber00/Cb00_InternalDoor.h"
 #include "Components/BoxComponent.h"
-#include "Portal/CustomPortal.h"
+#include "Portal/CustomPortalBase.h"
 
 void AChamber00PortalManager::SpawnPortalPair()
 {
@@ -43,7 +43,7 @@ void AChamber00PortalManager::SpawnPortalPair()
 	SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
 
 	// ====== Blue Portal ======
-	BluePortal = GetWorld()->SpawnActorDeferred<ACustomPortal>(
+	BluePortal = GetWorld()->SpawnActorDeferred<ACustomPortalBase>(
 		PortalClass,
 		BlueXform,
 		this,
@@ -63,7 +63,7 @@ void AChamber00PortalManager::SpawnPortalPair()
 	BluePortal->FinishSpawning(BlueXform);
 
 	// ====== Orange Portal ======
-	OrangePortal = GetWorld()->SpawnActorDeferred<ACustomPortal>(
+	OrangePortal = GetWorld()->SpawnActorDeferred<ACustomPortalBase>(
 		PortalClass,
 		OrangeXform,
 		this,
@@ -115,7 +115,7 @@ bool AChamber00PortalManager::IsPortalPairSpawned() const
 	return IsValid(BluePortal) && IsValid(OrangePortal);
 }
 
-void AChamber00PortalManager::DestroyPortalSafe(TObjectPtr<ACustomPortal>& PortalPtr)
+void AChamber00PortalManager::DestroyPortalSafe(TObjectPtr<ACustomPortalBase>& PortalPtr)
 {
 	if (IsValid(PortalPtr))
 	{

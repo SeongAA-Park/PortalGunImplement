@@ -1,7 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 
-#include "Portal/CustomPortal.h"
+#include "Portal/CustomPortalBase.h"
 
 #include "Blueprint/WidgetLayoutLibrary.h"
 #include "Components/BoxComponent.h"
@@ -13,7 +13,7 @@
 #include "Engine/EngineTypes.h"
 
 // Sets default values
-ACustomPortal::ACustomPortal()
+ACustomPortalBase::ACustomPortalBase()
 {
 	PrimaryActorTick.bCanEverTick = true;
 
@@ -59,8 +59,8 @@ ACustomPortal::ACustomPortal()
 	DetectBoxCollision->SetCollisionResponseToChannel(ECC_PhysicsBody, ECR_Overlap);
 
 	// 이벤트 바인딩 (함수와 연결)
-	DetectBoxCollision->OnComponentBeginOverlap.AddDynamic(this, &ACustomPortal::OnOverlapBegin);
-	DetectBoxCollision->OnComponentEndOverlap.AddDynamic(this, &ACustomPortal::OnOverlapEnd);
+	DetectBoxCollision->OnComponentBeginOverlap.AddDynamic(this, &ACustomPortalBase::OnOverlapBegin);
+	DetectBoxCollision->OnComponentEndOverlap.AddDynamic(this, &ACustomPortalBase::OnOverlapEnd);
 	
 	//(추가) Clip 평면 설정을 위한 PortalCamera의 Capture Source 설정
 	PortalCamera->CaptureSource = ESceneCaptureSource::SCS_SceneColorHDR;
@@ -69,7 +69,7 @@ ACustomPortal::ACustomPortal()
 	PortalCamera->bCaptureOnMovement = true;
 }
 
-void ACustomPortal::BeginPlay()
+void ACustomPortalBase::BeginPlay()
 {
 	Super::BeginPlay();
 	
@@ -127,7 +127,7 @@ void ACustomPortal::BeginPlay()
 }
 
 // Called every frame
-void ACustomPortal::Tick(float DeltaTime)
+void ACustomPortalBase::Tick(float DeltaTime)
 {
 	Super::Tick(DeltaTime);
 
@@ -141,7 +141,7 @@ void ACustomPortal::Tick(float DeltaTime)
 }
 
 
-void ACustomPortal::UpdatePortalView3()
+void ACustomPortalBase::UpdatePortalView3()
 {
 	if (!LinkedPortal || !PortalCamera) return;
 	
@@ -182,7 +182,7 @@ void ACustomPortal::UpdatePortalView3()
 	
 }
 
-void ACustomPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+void ACustomPortalBase::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
                                    UPrimitiveComponent* OtherComp, int32 OtherBodyIndex, bool bFromSweep, const FHitResult& SweepResult)
 {
 	// 1. 유효성 검사 (AttachedWall이 있는지 먼저 확인)
@@ -259,7 +259,7 @@ void ACustomPortal::OnOverlapBegin(UPrimitiveComponent* OverlappedComp, AActor* 
 	}
 }
 
-void ACustomPortal::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
+void ACustomPortalBase::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* OtherActor,
 	UPrimitiveComponent* OtherComp, int32 OtherBodyIndex)
 {
 	// 1. 유효성 검사
@@ -286,7 +286,7 @@ void ACustomPortal::OnOverlapEnd(UPrimitiveComponent* OverlappedComp, AActor* Ot
 	}
 }
 
-void ACustomPortal::ApplyPortalVisuals()
+void ACustomPortalBase::ApplyPortalVisuals()
 {
 	// MID가 아직 없으면 만들어 둠 (안전장치)
 	if (!PortalMID && PortalMesh && NewCP_Material)

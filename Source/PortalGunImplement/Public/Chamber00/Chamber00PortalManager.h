@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "Chamber00PortalManager.generated.h"
 
-class ACustomPortal;
+class ACustomPortalBase;
 class UBoxComponent;
 class USceneComponent;
 class ACb00_InternalDoor;
@@ -36,7 +36,7 @@ protected:
 
 	/** 스폰할 포탈 클래스(당신이 PortalGun에서 쓰던 CustomPortal BP/Class 지정) */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chamber00|Config")
-	TSubclassOf<ACustomPortal> PortalClass;
+	TSubclassOf<ACustomPortalBase> PortalClass;
 
 	/** 게임 시작 후 몇 초 뒤 포탈을 생성할지 */
 	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category="Chamber00|Config", meta=(ClampMin="0.0", Units="s"))
@@ -51,10 +51,10 @@ protected:
 
 	/** ====== Runtime ====== */
 	UPROPERTY(Transient)
-	TObjectPtr<ACustomPortal> BluePortal;
+	TObjectPtr<ACustomPortalBase> BluePortal;
 
 	UPROPERTY(Transient)
-	TObjectPtr<ACustomPortal> OrangePortal;
+	TObjectPtr<ACustomPortalBase> OrangePortal;
 
 	FTimerHandle SpawnTimerHandle;
 	
@@ -79,7 +79,7 @@ protected:
 
 	/** 내부 유틸 */
 	bool IsPortalPairSpawned() const;
-	void DestroyPortalSafe(TObjectPtr<ACustomPortal>& PortalPtr);
+	void DestroyPortalSafe(TObjectPtr<ACustomPortalBase>& PortalPtr);
 	
 public:
 	//버튼에 연결되어 있지 않고, 월드 수준으로 관리되는 Door 존재 - 월드에 스폰되어 있는 인스턴스 참조하기

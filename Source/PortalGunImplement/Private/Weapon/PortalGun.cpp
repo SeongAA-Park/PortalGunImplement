@@ -2,7 +2,7 @@
 
 
 #include "Weapon/PortalGun.h"
-#include "Portal/CustomPortal.h"
+#include "Portal/CustomPortalBase.h"
 #include "Portal/PortalGunShooterCharacter.h"
 #include "Kismet/KismetMathLibrary.h"
 #include "DrawDebugHelpers.h"
@@ -178,7 +178,7 @@ void APortalGun::ExecutePortalTrace(int32 ColorIndex)
 
 		// [중요!] 실제 포탈 인스턴스 스폰
 		//ACustomPortal* NewPortal = GetWorld()->SpawnActor<ACustomPortal>(PortalClass, SpawnLocation, SpawnRotation, SpawnParams);
-		ACustomPortal* NewPortal = GetWorld()->SpawnActorDeferred<ACustomPortal>(
+		ACustomPortalBase* NewPortal = GetWorld()->SpawnActorDeferred<ACustomPortalBase>(
 		PortalClass, FTransform(SpawnRotation, SpawnLocation), this, PortalHoldingPlayer);
 		
 		if (NewPortal)

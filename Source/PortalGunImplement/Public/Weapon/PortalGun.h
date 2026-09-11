@@ -6,7 +6,7 @@
 #include "GameFramework/Actor.h"
 #include "PortalGun.generated.h"
 
-class ACustomPortal;
+class ACustomPortalBase;
 class APortalGunShooterCharacter;
 class USphereComponent;
 
@@ -37,16 +37,16 @@ protected:
 	
 	// 스폰할 포탈 클래스 (from PortalGunComponent)
 	UPROPERTY(EditAnywhere, Category = "Portal")
-	TSubclassOf<class ACustomPortal> PortalClass;
+	TSubclassOf<class ACustomPortalBase> PortalClass;
 	
 	// 현재 월드에 생성된 포탈들의 주소를 기억하고 새로 쓸 대 기존 것을 지우는 로직 담당을 위해
 	//생성된 파란색 포탈의 주소를 기억합니다. (from PortalGunComponent)
 	UPROPERTY(Transient)
-	TObjectPtr<ACustomPortal> BluePortal;
+	TObjectPtr<ACustomPortalBase> BluePortal;
 	
 	//생성된 주황색 포탈의 주소를 기억합니다. (from PortalGunComponent)
 	UPROPERTY(Transient)
-	TObjectPtr<ACustomPortal> OrangePortal; 
+	TObjectPtr<ACustomPortalBase> OrangePortal; 
 	
 	/** AnimInstance class to set for the first person character mesh when this weapon is active (from ShooterWeapon(ArenaShooter)) */
 	UPROPERTY(EditAnywhere, Category="Animation")

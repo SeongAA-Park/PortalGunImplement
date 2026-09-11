@@ -4,7 +4,7 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
-#include "Portal/CustomPortal.h"
+#include "Portal/CustomPortalBase.h"
 #include "Logging/LogMacros.h"
 #include "PortalGunImplementCharacter.generated.h"
 
